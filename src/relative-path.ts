@@ -1,14 +1,14 @@
 import * as path from './path-tools'
 import { PathBase } from './path-base'
 
-export class FsRelativePath extends PathBase {
+export class RelativePath extends PathBase {
 
   protected path_: string
 
-  constructor(relpath: string | FsRelativePath) {
+  constructor(relpath: string | RelativePath) {
     super()
     relpath = String(relpath)
-    if (!FsRelativePath.isRelativePathString(relpath)) {
+    if (!RelativePath.isRelativePathString(relpath)) {
       throw new Error(`Path must be relative, not absolute: "${relpath}"`)
     }
     this.path_ = path.normalize(relpath)

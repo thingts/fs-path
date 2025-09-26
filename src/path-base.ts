@@ -1,6 +1,6 @@
 import * as path from './path-tools'
 import { FilenameBase } from './filename-base'
-import { FsFilename } from './fs-filename'
+import { Filename } from './filename'
 
 export abstract class PathBase extends FilenameBase {
   protected abstract path_: string
@@ -22,7 +22,7 @@ export abstract class PathBase extends FilenameBase {
   // Getters for path properties
   //
 
-  get filename(): FsFilename { return new FsFilename(this.filename_) }
+  get filename(): Filename { return new Filename(this.filename_) }
 
   get parent(): this {
     return this.create(path.dirname(this.path_))
@@ -36,7 +36,7 @@ export abstract class PathBase extends FilenameBase {
     return this.create((path.join(this.path_, ...segments.filter(s => s !== null && s !== undefined).map(s => String(s)))))
   }
 
-  replaceFilename(newFilename: string | FsFilename): this {
+  replaceFilename(newFilename: string | Filename): this {
     return this.withFilename(String(newFilename))
   }
 
@@ -48,7 +48,7 @@ export abstract class PathBase extends FilenameBase {
     return this.withFilename(this.filename.replaceExtension(newExt))
   }
 
-  transformFilename(fn: (filename: FsFilename) => string | FsFilename): this {
+  transformFilename(fn: (filename: Filename) => string | Filename): this {
     return this.withFilename(fn(this.filename))
   }
 
@@ -64,5 +64,5 @@ export abstract class PathBase extends FilenameBase {
   [Symbol.toPrimitive](): string                            { return this.path_ }
   equals(other: string | PathBase): boolean                 { return this.path_ === this.create(String(other)).path_ }
   protected get filename_(): string                         { return path.basename(this.path_) }
-  protected withFilename(filename: string|FsFilename): this { return this.parent.join(filename) }
+  protected withFilename(filename: string|Filename): this { return this.parent.join(filename) }
 }

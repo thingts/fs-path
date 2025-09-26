@@ -1,12 +1,12 @@
 import * as path from './path-tools'
-import type { FsAbsolutePath } from './fs-absolute-path'
+import type { AbsolutePath } from './absolute-path'
 import { FsPath } from './fs-path'
 import { promises as fs, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 
 export class FsDisposablePath extends FsPath {
 
-  constructor(path: string | FsAbsolutePath, opts?: { dispose?: 'onExit' | false }) {
+  constructor(path: string | AbsolutePath, opts?: { dispose?: 'onExit' | false }) {
     super(path)
     const { dispose = false } = opts ?? {}
     if (dispose === 'onExit') {
@@ -30,7 +30,7 @@ export class FsDisposablePath extends FsPath {
   
   private static disposePaths: string[] = []
 
-  private static removeOnExit(path: FsAbsolutePath | string): void {
+  private static removeOnExit(path: AbsolutePath | string): void {
     if (FsDisposablePath.disposePaths.length == 0) {
       process.on('exit', () => FsDisposablePath.disposePaths.forEach(p => rmSync(p, { recursive: true, force: true })))
     }

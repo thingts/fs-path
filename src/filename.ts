@@ -1,13 +1,13 @@
 import * as path from './path-tools'
 import { FilenameBase } from './filename-base'
 
-export class FsFilename extends FilenameBase {
+export class Filename extends FilenameBase {
   protected filename_: string
 
-  constructor(filename: string | FsFilename) {
+  constructor(filename: string | Filename) {
     super()
     filename = String(filename)
-    if (!FsFilename.isFilenameString(filename)) {
+    if (!Filename.isFilenameString(filename)) {
       throw new Error(`Filename must not contain path components: "${filename}"`)
     }
     this.filename_ = filename
@@ -35,6 +35,6 @@ export class FsFilename extends FilenameBase {
   toString(): string                             { return this.filename_ }
   valueOf(): string                              { return this.filename_ }
   [Symbol.toPrimitive](): string                 { return this.filename_ }
-  equals(other: string | FsFilename): boolean    { return this.filename_ === String(other) }
-  protected withFilename(filename: string): this { return new FsFilename(filename) as this }
+  equals(other: string | Filename): boolean    { return this.filename_ === String(other) }
+  protected withFilename(filename: string): this { return new Filename(filename) as this }
 }

@@ -1,7 +1,7 @@
 import fg from 'fast-glob'
-import type { FsFilename } from './fs-filename'
+import type { Filename } from './filename'
 import type { ReadStream, Stats } from 'node:fs'
-import { FsAbsolutePath } from './fs-absolute-path'
+import { AbsolutePath } from './absolute-path'
 import { promises as fs } from 'node:fs'
 
 interface FsPathFilterOptions {
@@ -36,10 +36,10 @@ interface FsReaddirOptions extends FsPathFilterOptions {
   allowMissing?: boolean
 }
 
-export class FsPath extends FsAbsolutePath {
+export class FsPath extends AbsolutePath {
 
-  constructor(p: string | FsPath | FsAbsolutePath) {
-    if (FsAbsolutePath.isAbsolutePathString(String(p))) {
+  constructor(p: string | FsPath | AbsolutePath) {
+    if (AbsolutePath.isAbsolutePathString(String(p))) {
       super(p)
     } else {
       super(process.cwd() + '/' + String(p))
@@ -141,7 +141,7 @@ export class FsPath extends FsAbsolutePath {
   }
 
   
-  async rename(to: FsAbsolutePath, opts?: { mkdirIfNeeded?: boolean }): Promise<void> {
+  async rename(to: AbsolutePath, opts?: { mkdirIfNeeded?: boolean }): Promise<void> {
     const { mkdirIfNeeded = false } = opts ?? {}
     const target = new FsPath(to)
     await target.#mkdirIfNeeded(mkdirIfNeeded)
@@ -157,7 +157,7 @@ export class FsPath extends FsAbsolutePath {
     })
   }
 
-  async copyTo(to: FsAbsolutePath, opts?: { intoDir?: boolean, mkdirIfNeeded?: boolean }): Promise<void> {
+  async copyTo(to: AbsolutePath, opts?: { intoDir?: boolean, mkdirIfNeeded?: boolean }): Promise<void> {
     const { intoDir = false, mkdirIfNeeded = false } = opts ?? {}
     const target      = new FsPath(to)
     const destination = intoDir ? target.join(this.filename) : target
@@ -179,7 +179,7 @@ export class FsPath extends FsAbsolutePath {
     }
   }
 
-  async glob(pattern: string | FsFilename, opts?: FsReaddirOptions): Promise<FsPath[]> {
+  async glob(pattern: string | Filename, opts?: FsReaddirOptions): Promise<FsPath[]> {
     const { allowMissing = false, includeDotfiles, onlyDirs, onlyFiles } = { ...FilterOptionDefaults, ...opts }
     // fs-glob will return an empty array if the directory does not exist,
     // but we want to throw ENOENT unless allowMissing is set.

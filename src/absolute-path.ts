@@ -1,14 +1,14 @@
 import * as path from './path-tools'
-import type { FsFilename } from './fs-filename'
-import { FsRelativePath } from './fs-relative-path'
+import type { Filename } from './filename'
+import { RelativePath } from './relative-path'
 import { PathBase } from './path-base'
 
-export class FsAbsolutePath extends PathBase {
+export class AbsolutePath extends PathBase {
   protected readonly path_: string
 
-  constructor(p: string | FsAbsolutePath) {
+  constructor(p: string | AbsolutePath) {
     super()
-    this.path_ = FsAbsolutePath.#canonicalize(String(p))
+    this.path_ = AbsolutePath.#canonicalize(String(p))
   }
 
   static #canonicalize(p: string): string {
@@ -20,7 +20,7 @@ export class FsAbsolutePath extends PathBase {
   // Path manipulation methods
   //
 
-  resolve(...segments: readonly (string | FsFilename | FsRelativePath | FsAbsolutePath | null | undefined)[]): this {
+  resolve(...segments: readonly (string | Filename | RelativePath | AbsolutePath | null | undefined)[]): this {
     return this.create(path.resolve(this.path_, ...segments.filter(s => s != null).map(s => String(s))))
   }
 
@@ -29,11 +29,11 @@ export class FsAbsolutePath extends PathBase {
   // Path querying methods
   //
  
-  relativeTo(base: FsAbsolutePath): FsRelativePath {
-    return new FsRelativePath(path.relative(base.path_, this.path_))
+  relativeTo(base: AbsolutePath): RelativePath {
+    return new RelativePath(path.relative(base.path_, this.path_))
   }
 
-  descendsFrom(ancestor: FsAbsolutePath | string, opts?: { includeSelf?: boolean }): boolean {
+  descendsFrom(ancestor: AbsolutePath | string, opts?: { includeSelf?: boolean }): boolean {
     const { includeSelf = false } = opts ?? {}
     const ancestorPath = path.resolve(String(ancestor))
     const current      = this.path_

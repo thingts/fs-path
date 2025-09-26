@@ -1,5 +1,5 @@
-export { FsAbsolutePath } from './fs-absolute-path'
+export { AbsolutePath } from './absolute-path'
 export { FsDisposablePath } from './fs-disposable-path'
-export { FsFilename } from './fs-filename'
+export { Filename } from './filename'
 export { FsPath } from './fs-path'
-export { FsRelativePath } from './fs-relative-path'
+export { RelativePath } from './relative-path'

@@ -27,14 +27,14 @@ manipulation operation returns a new instance.
 
 Most commonly, you'll likely use `FsPath`, but the full collection of classes is:
 
-* `FsPath` - Path object with filesystem operations (extends `FsAbsolutePath`)
-* `FsAbsolutePath` - Absolute path object with path manipulation (no fs ops)
-* `FsRelativePath` - Relative path object with path manipulation (no fs ops)
-* `FsFilename` - Immutable filename with file part manipulation (no fs ops)
+* `FsPath` - Path object with filesystem operations (extends `AbsolutePath`)
+* `AbsolutePath` - Absolute path object with path manipulation (no fs ops)
+* `RelativePath` - Relative path object with path manipulation (no fs ops)
+* `Filename` - Immutable filename with file part manipulation (no fs ops)
 * `FsDisposablePath` - Extends `FsPath` with automatic cleanup of temporary files and directories
 
 The classes work together to maintain type safety and ergonomics.  For
-example, the `.relativeTo()` method of `FsPath` returns an `FsRelativePath`
+example, the `.relativeTo()` method of `FsPath` returns an `RelativePath`
 object, which would need to be joined to a base `FsPath` in order to
 perform filesystem operations.
 
@@ -62,12 +62,14 @@ b.equals(FsPath.cwd().join('relative/to/cwd.txt')) // true
 
 ```typescript
 const a = new FsPath('/bar/file.txt')
+a.filename                // Filename: 'file.txt'
 a.filename.toString()     // string: 'file.txt'
 a.stem                    // string: 'file'
 a.extension               // string: '.txt'
 const b = a.replaceStem('report')         // FsPath: '/bar/report.txt'
 const c = b.replaceExtension('.md')       // FsPath: '/bar/report.md'
-const d = c.transformFilename(fn => fn.toUpperCase()) // FsPath: '/bar/REPORT.MD'
+const d = c.replaceParent('/other')        // FsPath: '/other/report.md'
+const e = d.transformFilename(fn => fn.toUpperCase()) // FsPath: '/other/REPORT.MD'
 ```
 
 #### Navigation
@@ -77,7 +79,7 @@ const base = new FsPath('/projects/demo')
 base.join('src/index.ts')               // FsPath: '/projects/demo/src/index.ts'
 base.descendsFrom('/projects')          // true
 base.parent.equals('/projects')         // true
-const rel = base.join('src/main.ts').relativeTo(base) // FsRelativePath: 'src/main.ts'
+const rel = base.join('src/main.ts').relativeTo(base) // RelativePath: 'src/main.ts'
 ```
 
 #### Filesystem operations

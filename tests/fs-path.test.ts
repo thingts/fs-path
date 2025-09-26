@@ -1,4 +1,4 @@
-import { FsFilename, FsPath, FsDisposablePath, FsRelativePath } from '$src'
+import { Filename, FsPath, FsDisposablePath, RelativePath } from '$src'
 import { beforeEach, describe, it, expect } from 'vitest'
 
 
@@ -29,7 +29,7 @@ describe('FsPath', () => {
 
     it('exposes filename, stem, extension', () => {
       const p = new FsPath('/tmp/foo/bar/file.test.txt')
-      expect(p.filename).toBeInstanceOf(FsFilename)
+      expect(p.filename).toBeInstanceOf(Filename)
       expect(String(p.filename)).toBe('file.test.txt')
       expect(p.stem).toBe('file.test')
       expect(p.extension).toBe('.txt')
@@ -64,7 +64,7 @@ describe('FsPath', () => {
     it('can transform filename', () => {
       const p = new FsPath('/foo/bar/file.txt')
       const p1 = p.transformFilename(fn => {
-        expect(fn).toBeInstanceOf(FsFilename)
+        expect(fn).toBeInstanceOf(Filename)
         return fn.toString().toUpperCase()
       })
       expect(p1).toBeInstanceOf(FsPath)
@@ -82,7 +82,7 @@ describe('FsPath', () => {
       const base = new FsPath('/foo/bar')
       const child = new FsPath('/foo/bar/baz/qux.txt')
       const relpath = child.relativeTo(base)
-      expect(relpath).toBeInstanceOf(FsRelativePath)
+      expect(relpath).toBeInstanceOf(RelativePath)
       expect(String(relpath)).toBe('baz/qux.txt')
     })
 
