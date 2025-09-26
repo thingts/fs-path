@@ -1,5 +1,4 @@
 import * as path from './path-tools'
-import type { FilenameBase } from './filename-base'
 import type { FsFilename } from './fs-filename'
 import { FsRelativePath } from './fs-relative-path'
 import { PathBase } from './path-base'
@@ -22,7 +21,7 @@ export class FsAbsolutePath extends PathBase {
   //
 
   resolve(...segments: readonly (string | FsFilename | FsRelativePath | FsAbsolutePath | null | undefined)[]): this {
-    return this.withPath(path.resolve(this.path_, ...segments.filter(s => s != null).map(s => String(s))))
+    return this.create(path.resolve(this.path_, ...segments.filter(s => s != null).map(s => String(s))))
   }
 
   //
@@ -51,11 +50,5 @@ export class FsAbsolutePath extends PathBase {
   static isAbsolutePathString(filepath: string): boolean {
     return path.isAbsolute(filepath)
   }
-
-  //
-  // PathBase abstract method implemenations
-  //
- 
-  protected withPath(path: string | FilenameBase): this { return new FsAbsolutePath(String(path)) as this }
 
 }

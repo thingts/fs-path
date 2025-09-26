@@ -4,7 +4,19 @@ import { FsFilename } from './fs-filename'
 
 export abstract class PathBase extends FilenameBase {
   protected abstract path_: string
-  protected abstract withPath(path: string | FilenameBase): this
+
+  /**
+   * Protected factory method to create a new instance of the derived
+   * class, used for immutable operations that return a new instance.
+   *
+   * Default implementation assumes the derived class has a constructor
+   * that takes a single string argument (the path).  Derived classes can
+   * override this method if their constructor signature is different.
+   */
+  protected create(path: string | FilenameBase): this {
+    const ctor = this.constructor as new(path: string) => this
+    return new ctor(String(path))
+  }
 
   //
   // Getters for path properties
@@ -13,7 +25,7 @@ export abstract class PathBase extends FilenameBase {
   get filename(): FsFilename { return new FsFilename(this.filename_) }
 
   get parent(): this {
-    return this.withPath(path.dirname(this.path_))
+    return this.create(path.dirname(this.path_))
   }
 
   //
@@ -21,7 +33,7 @@ export abstract class PathBase extends FilenameBase {
   //
 
   join(...segments: readonly (string | null | undefined | FilenameBase)[]): this {
-    return this.withPath((path.join(this.path_, ...segments.filter(s => s !== null && s !== undefined).map(s => String(s)))))
+    return this.create((path.join(this.path_, ...segments.filter(s => s !== null && s !== undefined).map(s => String(s)))))
   }
 
   replaceFilename(newFilename: string | FsFilename): this {
@@ -41,7 +53,7 @@ export abstract class PathBase extends FilenameBase {
   }
 
   replaceParent(newParent: string | PathBase): this {
-    return this.withPath(path.join(String(newParent), this.filename_))
+    return this.create(path.join(String(newParent), this.filename_))
   }
 
   //
@@ -50,8 +62,7 @@ export abstract class PathBase extends FilenameBase {
   toString(): string                                        { return this.path_ }
   valueOf(): string                                         { return this.path_ }
   [Symbol.toPrimitive](): string                            { return this.path_ }
-  equals(other: string | PathBase): boolean                 { return this.path_ === this.withPath(String(other)).path_ }
+  equals(other: string | PathBase): boolean                 { return this.path_ === this.create(String(other)).path_ }
   protected get filename_(): string                         { return path.basename(this.path_) }
   protected withFilename(filename: string|FsFilename): this { return this.parent.join(filename) }
 }
-

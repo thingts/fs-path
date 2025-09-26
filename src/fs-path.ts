@@ -1,5 +1,4 @@
 import fg from 'fast-glob'
-import type { FilenameBase } from './filename-base'
 import type { FsFilename } from './fs-filename'
 import type { ReadStream, Stats } from 'node:fs'
 import { FsAbsolutePath } from './fs-absolute-path'
@@ -221,12 +220,6 @@ export class FsPath extends FsAbsolutePath {
       await this.parent.mkdir({ recursive: true })
     }
   }
-
-  //
-  // PathBase abstract method implemenations
-  //
- 
-  protected withPath(path: string | FilenameBase): this { return new FsPath(String(path)) as this }
 
 }
 

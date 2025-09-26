@@ -1,5 +1,4 @@
 import * as path from './path-tools'
-import type { FilenameBase } from './filename-base'
 import { PathBase } from './path-base'
 
 export class FsRelativePath extends PathBase {
@@ -21,11 +20,5 @@ export class FsRelativePath extends PathBase {
   static isRelativePathString(filepath: string): boolean {
     return !path.isAbsolute(filepath)
   }
-
-  //
-  // PathBase abstract method implemenations
-  //
- 
-  protected withPath(path: string | FilenameBase): this { return new FsRelativePath(String(path)) as this }
 
 }
