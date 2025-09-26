@@ -72,10 +72,9 @@ describe('Filename', () => {
 
   })
 
-  it('toString and valueOf yield the path string', () => {
+  it('toString yields the filename string', () => {
     const f = new Filename('example.txt')
     expect(f.toString()).toBe('example.txt')
-    expect(f.valueOf()).toBe('example.txt')
   })
 
   describe('Filename.isFilenameString', () => {

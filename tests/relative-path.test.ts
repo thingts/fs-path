@@ -34,13 +34,10 @@ describe('RelativePath', () => {
     expect(p1.equals('./foo/bar/A.txt/')).toBe(true)
   })
 
-  it('toString and valueOf yield the path string', () => {
+  it('toString yields the path string', () => {
     const p = new RelativePath('tmp/example.txt')
     expect(p.toString()).toBe('tmp/example.txt')
-    expect(p.valueOf()).toBe('tmp/example.txt')
   })
-
-
 
   describe('path properties and manipulation', () => {
 

@@ -70,6 +70,9 @@ function normalizeSegments(segments: readonly string[]): string {
 }
 
 
+// Like node:path.resolve(), except that it does not use process.cwd() as a
+// base, it only resolves the given segments.
+//
 export function resolve(...segments: readonly (string | null | undefined)[]): string {
   return joinOrResolve(segments, 'resolve')
 }
@@ -79,10 +82,13 @@ export function join(...segments: readonly (string | null | undefined)[]): strin
 }
 
 
-// Normalize a path, resolving '..' and '.' segments.
+// Like node:path.normalize(), with these additional canonicalization features:
 //
-// Preserve leading '/' if present, remove leading './', remove trailing '/' unless the path is
-// root '/'.  Empty path is normalized to '.'.
+// * preserve leading '/' if present
+// * remove leading './'
+// * remove trailing '/' unless the path is root '/'
+// * Empty path is normalized to '.'
+//
 export function normalize(p: string): string {
   const leadingDot = '.' + SEPARATOR
   let normalized = normalizeSegments(p.split(SEPARATOR))

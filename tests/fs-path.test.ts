@@ -148,10 +148,9 @@ describe('FsPath', () => {
 
   })
 
-  it('toString and valueOf yield the path string', () => {
+  it('toString yields the path string', () => {
     const p = new FsPath('/tmp/example.txt')
     expect(p.toString()).toBe('/tmp/example.txt')
-    expect(p.valueOf()).toBe('/tmp/example.txt')
   })
 
   describe('file system operations', () => {

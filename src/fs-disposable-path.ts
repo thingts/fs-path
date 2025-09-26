@@ -23,7 +23,6 @@ export class FsDisposablePath extends FsPath {
     return new FsDisposablePath(await fs.mkdtemp(path.join(tmpdir(), prefix)), { dispose })
   }
 
-
   ;[Symbol.dispose](): void {
     rmSync(this.path_, { recursive: true, force: true })
   }

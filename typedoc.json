@@ -1,0 +1,14 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "exclude": ["**/*.test.ts", "**/__tests__/**"],
+  "excludeInternal": true,
+  "excludeNotDocumented": true,
+  "excludeNotDocumentedKinds": ["Class", "Module"],
+  "excludePrivate": true,
+  "includeHierarchySummary": false,
+  "name": "@thingts/filepath",
+  "out": "docs",
+  "readme": "none",
+  "tsconfig": "tsconfig.json"
+}
