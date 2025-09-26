@@ -1,0 +1,42 @@
+{
+  "name": "fs-path",
+  "version": "1.0.0",
+  "description": "Type-safe, ergonomic package for working with paths and fs in Node.js",
+  "keywords": [
+    "typescript",
+    "fs",
+    "path",
+    "node",
+    "nodejs",
+    "node:path",
+    "node:fs"
+  ],
+  "homepage": "https://github.com/thingts/fs-path#readme",
+  "bugs": {
+    "url": "https://github.com/thingts/fs-path/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thingts/fs-path.git"
+  },
+  "license": "MIT",
+  "author": "ronen barzel",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "lint": "tsc --build --noEmit ; eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@types/node": "^24.5.2",
+    "eslint": "^9.36.0",
+    "knip": "^5.64.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.1",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "fast-glob": "^3.3.3"
+  }
+}
