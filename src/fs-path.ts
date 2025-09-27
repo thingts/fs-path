@@ -78,6 +78,12 @@ export interface FsReaddirOptions extends FsPathFilterOptions {
  * {@link FsPath} inherits from `@thingts/filepath`'s {@link AbsolutePath} but
  * with added methods for filesystem access.
  *
+ * Having a {@link FsPath} doesn't imply that a file or directory exists at
+ * that path in the filesystem; use {@link exists}, {@link isFile}, {@link
+ * isDirectory} or {@link stat} to check for existence, and use {@link
+ * write}, {@link touch}, {@link mkdir}, or {@link makeTempDirectory} to
+ * create files or directories.
+ *
  * ⚠️  In the documentation below that is inherited from {@link AbsolutePath},
  * examples that refer to `AbsolutePath` apply equally to `FsPath` -- in
  * particular, the path manipulation methods like {@link join} return
@@ -100,9 +106,10 @@ export class FsPath extends AbsolutePath {
    * directory. The path is always normalized.
    *
    * Creating an {@link FsPath} instance does not imply that the path
-   * exists on the filesystem; use {@link exists}, {@link isFile} or {@link
-   * isDirectory} to check for existence, and use {@link mkdir}, {@link
-   * write} or {@link touch} to create files or directories.
+   * exists on the filesystem; use {@link exists}, {@link isFile}, {@link
+   * isDirectory} or {@link stat} to check for existence, and use {@link
+   * write}, {@link touch}, {@link mkdir}, or {@link makeTempDirectory} to
+   * create files or directories.
    *
    * @example
    * ```ts
@@ -504,10 +511,10 @@ export class FsPath extends AbsolutePath {
 
   /**
    * Marks this path as disposable, meaning the file or directory will
-   * be automatically delete when no longer needed.
+   * be automatically deleted when no longer needed.
    *
    * Disposable paths will be disposed of in one of three circumstances,
-   * whichever comes first.
+   * whichever comes first:
    *
    * * Via `using` -- The path is deleted as soon as FsPath object goes out
    *   of scope.  This is the most immediate and reliable.
@@ -515,8 +522,7 @@ export class FsPath extends AbsolutePath {
    * * Disposal when the {@link FsPath} object is garbage collected. As always,
    *   there's no knowing when or if this will happen.
    *
-   * * Disposal on process exit. Uses `process.on('exit')`, which is not
-   *   guaranteed to run if the process is killed abruptly.
+   * * Disposal on process exit. 
    *
    * ⚠️  Disposal is best-effort; it may fail due to permissions or be
    * skipped if the process exits abnomrally.  Failures during disposal are
