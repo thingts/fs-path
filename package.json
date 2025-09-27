@@ -26,8 +26,27 @@
   "license": "MIT",
   "author": "ronen barzel",
   "type": "module",
-  "main": "src/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
   "scripts": {
+    "build": "tsup src/index.ts --dts --format esm,cjs",
     "docs": "typedoc",
     "lint": "tsc --build --noEmit ; eslint .",
     "test": "vitest run"
@@ -37,6 +56,7 @@
     "@types/node": "^24.5.2",
     "eslint": "^9.36.0",
     "knip": "^5.64.0",
+    "tsup": "^8.5.0",
     "typedoc": "^0.28.13",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.1",

@@ -1,5 +1,11 @@
 # @thingts/fs-path
 
+[![npm version](https://img.shields.io/npm/v/@thingts/fs-path.svg)](https://www.npmjs.com/package/@thingts/fs-path)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/thingts/fs-path/ci.yaml)](https://github.com/thingts/fs-path/actions/workflows/ci.yaml)
+[![docs](https://img.shields.io/badge/docs-typedoc-blue)](https://thingts.github.io/fs-path/)
+[![GitHub License](https://img.shields.io/github/license/thingts/fs-path)](LICENSE)
+
+
 Type-safe, ergonomic package for working with paths and fs in Node.js.
 
 Instead of juggling raw strings with
@@ -45,6 +51,18 @@ example, the `.relativeTo()` method of `FsPath` returns an `FsRelativePath`
 object -- which would need to be joined to a base `FsPath` in order to
 perform filesystem operations.
 
+## Installation
+
+```bash
+# with npm
+npm install @thingsts/fs-path
+
+# with yarn
+yarn add @thingsts/fs-path
+
+# with pnpm
+pnpm add @thingsts/fs-path
+```
 
 ## Usage examples
 
