@@ -7,6 +7,7 @@ Instead of juggling raw strings with
 [node:fs](https://nodejs.org/api/fs.html), `@thingts/fs-path` makes
 filesystem paths **first-class citizens** in your code.
 
+Built on [`@thingts/filepath`](https://www.npmjs.com/package/@thingts/filepath) for path manipulation, and adds async filesystem operations.
 
 * Immutable, chainable path objects with type-safe operations
 * Path normalization and resolution on construction
@@ -16,30 +17,36 @@ filesystem paths **first-class citizens** in your code.
 * Async filesystem operations (exists, isFile, isDirectory, stat, read, write, mkdir, readdir, glob, etc)
 * Temporary directory & file management
 
+Together, these features give you a safer, more expressive way to work with
+paths, files, and directories in Node.js
 
-Together these features give you a safer, more expressive way to work with paths, files, and directories in Node.js
+#### Notes:
+
+⚠️ Currently only POSIX-style paths are supported (e.g. `/foo/bar`).
+
+💡 For environments outside Node.js (like browser or Deno), [`@thingts/filepath`](https://www.npmjs.com/package/@thingts/filepath) provides path manipulation with no dependencies (and no file operations).
+
+🔧 This package supports most commonly used [`node:fs`](https://nodejs.org/api/fs.html) features & options.  But not all; contributions to expand functionality are welcome.
 
 ## Overview
 
 The package provides a set of classes to represent and manipulate
-filesystem paths.  All classes are immutable; any path or filename
-manipulation operation returns a new instance.
+filesystem paths.  All classes are immutable; any path manipulation
+operation returns a new instance.
 
-Most commonly, you'll likely use `FsPath`, but the full collection of classes is:
+Most commonly, you'll likely use `FsPath`, but the full set of exported classes is:
 
-* `FsPath` - Path object with filesystem operations (extends `AbsolutePath`)
-* `AbsolutePath` - Absolute path object with path manipulation (no fs ops)
-* `RelativePath` - Relative path object with path manipulation (no fs ops)
-* `Filename` - Immutable filename with file part manipulation (no fs ops)
-* `FsDisposablePath` - Extends `FsPath` with automatic cleanup of temporary files and directories
+* `FsPath` - Absolute path, with path manipulation and filesystem operations (extends `@thingts/filepath`'s [AbsolutePath](https://thingts.github.io/filepath/classes/AbsolutePath.html))
+* `FsRelativePath` - Relative path with path manipulation.  (Re-export of [RelativePath](https://thingts.github.io/filepath/classes/RelativePath.html) from [`@thingts/filepath`](https://www.npmjs.com/package/@thingts/filepath) for convenience)
+* `FsFilename` - Immutable filename with file part manipulation.  (Re-export of [Filename](https://thingts.github.io/filepath/classes/Filename.html) from [`@thingts/filepath`](https://www.npmjs.com/package/@thingts/filepath) for convenience)
 
 The classes work together to maintain type safety and ergonomics.  For
-example, the `.relativeTo()` method of `FsPath` returns an `RelativePath`
-object, which would need to be joined to a base `FsPath` in order to
+example, the `.relativeTo()` method of `FsPath` returns an `FsRelativePath`
+object -- which would need to be joined to a base `FsPath` in order to
 perform filesystem operations.
 
 
-## Usage summary
+## Usage examples
 
 This is a quick overview of some common operations. For complete docs, see the [API Reference](https://thingts.github.io/fs-path).
 
@@ -66,9 +73,10 @@ a.filename                // Filename: 'file.txt'
 a.filename.toString()     // string: 'file.txt'
 a.stem                    // string: 'file'
 a.extension               // string: '.txt'
+a.parent                  // FsPath: '/bar'
 const b = a.replaceStem('report')         // FsPath: '/bar/report.txt'
 const c = b.replaceExtension('.md')       // FsPath: '/bar/report.md'
-const d = c.replaceParent('/other')        // FsPath: '/other/report.md'
+const d = c.replaceParent('/other')       // FsPath: '/other/report.md'
 const e = d.transformFilename(fn => fn.toUpperCase()) // FsPath: '/other/REPORT.MD'
 ```
 
@@ -79,7 +87,7 @@ const base = new FsPath('/projects/demo')
 base.join('src/index.ts')               // FsPath: '/projects/demo/src/index.ts'
 base.descendsFrom('/projects')          // true
 base.parent.equals('/projects')         // true
-const rel = base.join('src/main.ts').relativeTo(base) // RelativePath: 'src/main.ts'
+const rel = base.join('src/main.ts').relativeTo(base) // FsRelativePath: 'src/main.ts'
 ```
 
 #### Filesystem operations
@@ -108,26 +116,31 @@ const txts  = await dir.glob('**/*.log')   // glob within a directory
 
 #### Temporary files and directories
 
-`FsDisposablePath` disposes (removes) files and directories via the `using`
-keyword or cleanup on process exit.
+Automatically deletes disposable files and directories when they're no
+longer needed.
 
 ```typescript
-import { FsDisposablePath } from '@thingts/fs-path'
-
 // --- Explicit resource management ---
 {
-    using dir  = await FsDisposablePath.makeTempDirectory()
-    using file = new FsDisposablePath('/project/tempfile.txt')
+    using file = new FsPath('/project/tempfile.txt').disposable() // register for disposal
+    using dir  = await FsPath.makeTempDirectory() // returns already disposable object
 
     dir.exists() // true
     file.write('data') // create file
 
     ...
 
-    // removes dir and file from the filesystem when they go out of scope
+    // dir and file are removed when they go out of scope
 }
 
-// --- Cleanup on exit ---
-const dir  = await FsDisposablePath.makeTempDirectory({ dispose: 'onExit' }) 
-const file = new FsDisposablePath('/project/tempfile.txt', { dispose: 'onExit' })
+// --- Cleanup eventually, on gc or exit ---
+const dir  = await FsPath.makeTempDirectory() 
+const file = new FsPath('/project/tempfile.txt').disposable()
 ```
+
+## Contributing
+
+Contributions are welcome!
+
+As usual: fork the repo, create a feature branch, and open a
+pull request, with tests and docs for any new functionality.  Thanks!

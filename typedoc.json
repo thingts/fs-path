@@ -7,8 +7,11 @@
   "excludeNotDocumentedKinds": ["Class", "Module"],
   "excludePrivate": true,
   "includeHierarchySummary": false,
-  "name": "@thingts/filepath",
+  "name": "@thingts/fs-path",
   "out": "docs",
   "readme": "none",
-  "tsconfig": "tsconfig.json"
+  "tsconfig": "tsconfig.json",
+  "externalSymbolLinkMappings": {
+    "@thingts/filepath": { "AbsolutePath": "https://thingts.github.io/filepath/classes/AbsolutePath.html" }
+  }
 }

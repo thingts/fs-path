@@ -1,6 +1,6 @@
-import { Filename, FsPath, FsDisposablePath, RelativePath } from '$src'
+import { FsFilename, FsRelativePath, FsPath } from '$src'
 import { beforeEach, describe, it, expect } from 'vitest'
-
+import { tmpdir } from 'node:os'
 
 describe('FsPath', () => {
 
@@ -29,7 +29,7 @@ describe('FsPath', () => {
 
     it('exposes filename, stem, extension', () => {
       const p = new FsPath('/tmp/foo/bar/file.test.txt')
-      expect(p.filename).toBeInstanceOf(Filename)
+      expect(p.filename).toBeInstanceOf(FsFilename)
       expect(String(p.filename)).toBe('file.test.txt')
       expect(p.stem).toBe('file.test')
       expect(p.extension).toBe('.txt')
@@ -64,7 +64,7 @@ describe('FsPath', () => {
     it('can transform filename', () => {
       const p = new FsPath('/foo/bar/file.txt')
       const p1 = p.transformFilename(fn => {
-        expect(fn).toBeInstanceOf(Filename)
+        expect(fn).toBeInstanceOf(FsFilename)
         return fn.toString().toUpperCase()
       })
       expect(p1).toBeInstanceOf(FsPath)
@@ -82,7 +82,7 @@ describe('FsPath', () => {
       const base = new FsPath('/foo/bar')
       const child = new FsPath('/foo/bar/baz/qux.txt')
       const relpath = child.relativeTo(base)
-      expect(relpath).toBeInstanceOf(RelativePath)
+      expect(relpath).toBeInstanceOf(FsRelativePath)
       expect(String(relpath)).toBe('baz/qux.txt')
     })
 
@@ -157,7 +157,7 @@ describe('FsPath', () => {
     let dir: FsPath
 
     beforeEach(async () => {
-      dir = await FsDisposablePath.makeTempDirectory({ dispose: 'onExit' })
+      dir = await FsPath.makeTempDirectory()
     })
 
     it('can create, inspect, write, and read a file', async () => {
@@ -234,7 +234,7 @@ describe('FsPath', () => {
       })
 
       it('can optionally create parent directories', async () => {
-        const root = await FsDisposablePath.makeTempDirectory()
+        const root = await FsPath.makeTempDirectory()
         const nested = root.join('a/b/c/file.txt')
         await nested.write('hello', { mkdirIfNeeded: true })
         expect(await nested.read()).toBe('hello')
@@ -330,27 +330,41 @@ describe('FsPath', () => {
       })
     })
 
-    describe('rename()', () => {
-      it('renames a file to a new location', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+    describe('moveTo()', () => {
+      it('moves a file to a new location', async () => {
+        const dir = await FsPath.makeTempDirectory()
         const oldPath = dir.join('old.txt')
         const newPath = dir.join('new.txt')
 
         await oldPath.write('hello world')
-        await oldPath.rename(newPath)
+        await oldPath.moveTo(newPath)
 
         expect(await newPath.read()).toBe('hello world')
         expect(await oldPath.exists()).toBe(false)
       })
 
-      it('creates destination directory iff mkdirIfNeeded is true', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+      it('moves into a directory', async () => {
+        const dir = await FsPath.makeTempDirectory()
+        const oldPath = dir.join('old.txt')
+        const subdir = dir.join('subdir')
+        await subdir.mkdir()
+
+        await oldPath.write('data')
+        await oldPath.moveTo(subdir, { intoDir: true })
+
+        const newPath = subdir.join('old.txt')
+        expect(await newPath.read()).toBe('data')
+        expect(await oldPath.exists()).toBe(false)
+      })
+
+      it('creates destination directory if mkdirIfNeeded is true', async () => {
+        const dir = await FsPath.makeTempDirectory()
         const src = dir.join('file.txt')
         const dest = dir.join('nested/newname.txt')
 
         await src.write('data')
-        await expect(() => src.rename(dest)).rejects.toThrow('ENOENT: no such file or directory')
-        await src.rename(dest, { mkdirIfNeeded: true })
+        await expect(() => src.moveTo(dest)).rejects.toThrow('ENOENT: no such file or directory')
+        await src.moveTo(dest, { mkdirIfNeeded: true })
 
         expect(await dest.read()).toBe('data')
         expect(await src.exists()).toBe(false)
@@ -372,7 +386,7 @@ describe('FsPath', () => {
       })
 
       it('can copy into a directory', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const source = dir.join('source.txt')
         await source.write(content)
 
@@ -385,7 +399,7 @@ describe('FsPath', () => {
       })
 
       it('can copy to a new file with mkdirIfNeeded', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const source = dir.join('source.txt')
         await source.write(content)
 
@@ -398,7 +412,7 @@ describe('FsPath', () => {
 
     describe('readdir()', () => {
       it('returns FsPath objects', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         await dir.join('a.txt').touch()
         await dir.join('b.txt').touch()
 
@@ -408,20 +422,20 @@ describe('FsPath', () => {
       })
 
       it('throws if directory is missing', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const ghost = dir.join('ghost-dir')
         await expect(() => ghost.readdir()).rejects.toThrow('ENOENT: no such file or directory')
       })
 
       it('returns [] if directory is missing and allowMissing is true', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const ghost = dir.join('ghost-dir')
         const result = await ghost.readdir({ allowMissing: true })
         expect(result).toEqual([])
       })
 
       it('throws if called on a file', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const file = dir.join('file.txt')
         await file.touch()
         await expect(() => file.readdir()).rejects.toThrow(/ENOTDIR/)
@@ -429,7 +443,7 @@ describe('FsPath', () => {
       })
 
       it('filters files based on options', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         await dir.join('.hidden').touch()
         await dir.join('visible.txt').touch()
         await dir.join('subdir').mkdir()
@@ -450,7 +464,7 @@ describe('FsPath', () => {
 
     describe('glob()', () => {
       it('returns matching files from a directory', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         await dir.join('foo.txt').touch()
         await dir.join('bar.log').touch()
         await dir.join('baz.txt').touch()
@@ -461,27 +475,27 @@ describe('FsPath', () => {
       })
 
       it('throws ENOTDIR if called on a file', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const file = dir.join('some.txt')
         await file.touch()
         await expect(() => file.glob('*')).rejects.toThrow(/ENOTDIR/)
       })
 
       it('throws ENOENT if dir is missing and allowMissing is false', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const missing = dir.join('ghost')
         await expect(() => missing.glob('*', { allowMissing: false })).rejects.toThrow(/ENOENT/)
       })
 
       it('returns [] if dir is missing and allowMissing is true', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const missing = dir.join('ghost')
         const result = await missing.glob('*', { allowMissing: true })
         expect(result).toEqual([])
       })
 
       it('returns a directory if it matches the glob pattern', async () => {
-        const dir = await FsDisposablePath.makeTempDirectory()
+        const dir = await FsPath.makeTempDirectory()
         const subdir = dir.join('subdir')
         await subdir.mkdir()
         await subdir.join('file.txt').write('test content')
@@ -498,7 +512,7 @@ describe('FsPath', () => {
       let file: FsPath
 
       beforeEach(async () => {
-        dir = await FsDisposablePath.makeTempDirectory()
+        dir = await FsPath.makeTempDirectory()
         file = dir.join('test.txt')
         await file.write('hello')
       })
@@ -541,6 +555,49 @@ describe('FsPath', () => {
     })
   })
 
+  describe('disposable', () => {
+
+    it('disposes via using block', async () => {
+      const root = await FsPath.makeTempDirectory()
+
+      const file = root.join('file.txt')
+      const dir = root.join('dir')
+
+      await file.write('hello')
+      await dir.mkdir()
+
+      {
+        using useFile = new FsPath(file).disposable()
+        using useDir = new FsPath(dir).disposable()
+        expect(await useFile.exists()).toBe(true)
+        expect(await useDir.exists()).toBe(true)
+      }
+      expect(await file.exists()).toBe(false)
+      expect(await dir.exists()).toBe(false)
+    })
+
+    it('retains a disposable path to prevent disposal', async () => {
+      const root = await FsPath.makeTempDirectory()
+
+      const file = root.join('file.txt')
+      const dir = root.join('dir')
+
+      await file.write('hello')
+      await dir.mkdir()
+
+      {
+        using useFile = new FsPath(file).disposable()
+        using useDir = new FsPath(dir).disposable()
+        expect(await useFile.exists()).toBe(true)
+        expect(await useDir.exists()).toBe(true)
+
+        useFile.retain()
+      }
+      expect(await file.exists()).toBe(true)
+      expect(await dir.exists()).toBe(false) // dir was not retained
+    })
+  })
+
 
   describe('static methods', () => {
 
@@ -549,6 +606,23 @@ describe('FsPath', () => {
       expect(String(cwd)).toBe(process.cwd())
     })
 
+    describe('makeTempDirectory()', () => {
+      it('creates a scratch directory under system tmpdir', async () => {
+        const dir = await FsPath.makeTempDirectory()
+        expect(dir).toBeInstanceOf(FsPath)
+        expect(dir.descendsFrom(tmpdir())).toBe(true)
+        expect(await dir.exists()).toBe(true)
+      })
+
+      it('creates a scratch directory with a prefix', async () => {
+        const prefix = 'mytest-'
+        const dir = await FsPath.makeTempDirectory({ prefix })
+        expect(String(dir.filename)).toMatch(/^mytest-/)
+        expect(await dir.exists()).toBe(true)
+      })
+    })
+
   })
+
 })
 

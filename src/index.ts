@@ -1,5 +1,6 @@
-export { AbsolutePath } from './absolute-path'
-export { FsDisposablePath } from './fs-disposable-path'
-export { Filename } from './filename'
-export { FsPath } from './fs-path'
-export { RelativePath } from './relative-path'
+export * from './fs-path'
+
+export { 
+  RelativePath as FsRelativePath, 
+  Filename as FsFilename 
+} from '@thingts/filepath'
