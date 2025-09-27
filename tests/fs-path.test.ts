@@ -1,4 +1,4 @@
-import { FsFilename, FsRelativePath, FsPath } from '$src'
+import { Filename, RelativePath, FsPath } from '$src'
 import { beforeEach, describe, it, expect } from 'vitest'
 import { tmpdir } from 'node:os'
 
@@ -29,7 +29,7 @@ describe('FsPath', () => {
 
     it('exposes filename, stem, extension', () => {
       const p = new FsPath('/tmp/foo/bar/file.test.txt')
-      expect(p.filename).toBeInstanceOf(FsFilename)
+      expect(p.filename).toBeInstanceOf(Filename)
       expect(String(p.filename)).toBe('file.test.txt')
       expect(p.stem).toBe('file.test')
       expect(p.extension).toBe('.txt')
@@ -64,7 +64,7 @@ describe('FsPath', () => {
     it('can transform filename', () => {
       const p = new FsPath('/foo/bar/file.txt')
       const p1 = p.transformFilename(fn => {
-        expect(fn).toBeInstanceOf(FsFilename)
+        expect(fn).toBeInstanceOf(Filename)
         return fn.toString().toUpperCase()
       })
       expect(p1).toBeInstanceOf(FsPath)
@@ -82,7 +82,7 @@ describe('FsPath', () => {
       const base = new FsPath('/foo/bar')
       const child = new FsPath('/foo/bar/baz/qux.txt')
       const relpath = child.relativeTo(base)
-      expect(relpath).toBeInstanceOf(FsRelativePath)
+      expect(relpath).toBeInstanceOf(RelativePath)
       expect(String(relpath)).toBe('baz/qux.txt')
     })
 
@@ -173,23 +173,23 @@ describe('FsPath', () => {
 
     it('can create and inspect a directory', async () => {
       const subdir = dir.join('sub')
-      await subdir.mkdir()
+      await subdir.makeDirectory()
       expect(await subdir.exists()).toBe(true)
       expect(await subdir.isDirectory()).toBe(true)
       expect(await subdir.isFile()).toBe(false)
     })
 
-    describe('mkdir()', () => {
+    describe('makeDirectory()', () => {
       it ('throws if trying to create an existing directory', async () => {
         const subdir = dir.join('sub')
-        await subdir.mkdir()
-        await expect(subdir.mkdir()).rejects.toThrow(/EEXIST/)
+        await subdir.makeDirectory()
+        await expect(subdir.makeDirectory()).rejects.toThrow(/EEXIST/)
       })
 
       it ('doesn\'t throw if trying to create an existing directory with recursive: true', async () => {
         const subdir = dir.join('sub')
-        await subdir.mkdir()
-        await expect(subdir.mkdir({ recursive: true})).resolves.toBeUndefined()
+        await subdir.makeDirectory()
+        await expect(subdir.makeDirectory({ makeParents: true})).resolves.toBeUndefined()
       })
     })
 
@@ -204,7 +204,7 @@ describe('FsPath', () => {
 
       it('removes a directory and its contents', async () => {
         const subdir = dir.join('subdir')
-        await subdir.mkdir()
+        await subdir.makeDirectory()
         const subfile = subdir.join('file.txt')
         await subfile.write('test')
         expect(await subdir.exists()).toBe(true)
@@ -236,7 +236,7 @@ describe('FsPath', () => {
       it('can optionally create parent directories', async () => {
         const root = await FsPath.makeTempDirectory()
         const nested = root.join('a/b/c/file.txt')
-        await nested.write('hello', { mkdirIfNeeded: true })
+        await nested.write('hello', { makeParents: true })
         expect(await nested.read()).toBe('hello')
       })
 
@@ -283,13 +283,13 @@ describe('FsPath', () => {
         expect(after.mtimeMs).toBeGreaterThan(before.mtimeMs)
       })
 
-      it('creates parent directories if mkdirIfNeeded is true', async () => {
+      it('creates parent directories if makeParents is true', async () => {
         const nested = dir.join('a/b/c/file.txt')
-        await nested.touch({ mkdirIfNeeded: true })
+        await nested.touch({ makeParents: true })
         expect(await nested.exists()).toBe(true)
       })
 
-      it('throws if parent directory is missing and mkdirIfNeeded is false', async () => {
+      it('throws if parent directory is missing and makeParents is false', async () => {
         const nested = dir.join('a/b/c/file.txt')
         await expect(() => nested.touch()).rejects.toThrow('ENOENT')
       })
@@ -347,7 +347,7 @@ describe('FsPath', () => {
         const dir = await FsPath.makeTempDirectory()
         const oldPath = dir.join('old.txt')
         const subdir = dir.join('subdir')
-        await subdir.mkdir()
+        await subdir.makeDirectory()
 
         await oldPath.write('data')
         await oldPath.moveTo(subdir, { intoDir: true })
@@ -357,14 +357,14 @@ describe('FsPath', () => {
         expect(await oldPath.exists()).toBe(false)
       })
 
-      it('creates destination directory if mkdirIfNeeded is true', async () => {
+      it('creates destination directory if makeParents is true', async () => {
         const dir = await FsPath.makeTempDirectory()
         const src = dir.join('file.txt')
         const dest = dir.join('nested/newname.txt')
 
         await src.write('data')
         await expect(() => src.moveTo(dest)).rejects.toThrow('ENOENT: no such file or directory')
-        await src.moveTo(dest, { mkdirIfNeeded: true })
+        await src.moveTo(dest, { makeParents: true })
 
         expect(await dest.read()).toBe('data')
         expect(await src.exists()).toBe(false)
@@ -391,20 +391,20 @@ describe('FsPath', () => {
         await source.write(content)
 
         const targetDir = dir.join('target-dir')
-        await targetDir.mkdir()
+        await targetDir.makeDirectory()
         await source.copyTo(targetDir, { intoDir: true })
 
         const targetFile = targetDir.join('source.txt')
         expect(await targetFile.read()).toBe(content)
       })
 
-      it('can copy to a new file with mkdirIfNeeded', async () => {
+      it('can copy to a new file with makeParents', async () => {
         const dir = await FsPath.makeTempDirectory()
         const source = dir.join('source.txt')
         await source.write(content)
 
         const target = dir.join('new-dir/target.txt')
-        await source.copyTo(target, { mkdirIfNeeded: true })
+        await source.copyTo(target, { makeParents: true })
 
         expect(await target.read()).toBe(content)
       })
@@ -446,7 +446,7 @@ describe('FsPath', () => {
         const dir = await FsPath.makeTempDirectory()
         await dir.join('.hidden').touch()
         await dir.join('visible.txt').touch()
-        await dir.join('subdir').mkdir()
+        await dir.join('subdir').makeDirectory()
 
         const all = await dir.readdir()
         expect(all.length).toBe(3)
@@ -497,7 +497,7 @@ describe('FsPath', () => {
       it('returns a directory if it matches the glob pattern', async () => {
         const dir = await FsPath.makeTempDirectory()
         const subdir = dir.join('subdir')
-        await subdir.mkdir()
+        await subdir.makeDirectory()
         await subdir.join('file.txt').write('test content')
 
         const matches = await dir.glob('sub*')
@@ -564,7 +564,7 @@ describe('FsPath', () => {
       const dir = root.join('dir')
 
       await file.write('hello')
-      await dir.mkdir()
+      await dir.makeDirectory()
 
       {
         using useFile = new FsPath(file).disposable()
@@ -583,7 +583,7 @@ describe('FsPath', () => {
       const dir = root.join('dir')
 
       await file.write('hello')
-      await dir.mkdir()
+      await dir.makeDirectory()
 
       {
         using useFile = new FsPath(file).disposable()

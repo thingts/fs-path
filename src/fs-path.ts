@@ -1,7 +1,7 @@
 import fg from 'fast-glob'
-import type { Filename, RelativePath } from '@thingts/filepath'
+import type { Filename, RelativePath } from '@thingts/path'
 import type { ReadStream, Stats } from 'node:fs'
-import { AbsolutePath } from '@thingts/filepath'
+import { AbsolutePath } from '@thingts/path'
 import { promises as fs, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 
@@ -75,13 +75,14 @@ export interface FsReaddirOptions extends FsPathFilterOptions {
  *
  * {@link FsPath} instances are normalized and immutable.
  *
- * {@link FsPath} inherits from `@thingts/filepath`'s {@link AbsolutePath} but
- * with added methods for filesystem access.
+ * {@link FsPath} inherits from {@link AbsolutePath} of
+ * [`@thingts/path`](npmjs.com/package/@thingts/path), but with added methods
+ * for filesystem access.
  *
  * Having a {@link FsPath} doesn't imply that a file or directory exists at
  * that path in the filesystem; use {@link exists}, {@link isFile}, {@link
  * isDirectory} or {@link stat} to check for existence, and use {@link
- * write}, {@link touch}, {@link mkdir}, or {@link makeTempDirectory} to
+ * write}, {@link touch}, {@link makeDirectory}, or {@link makeTempDirectory} to
  * create files or directories.
  *
  * ⚠️  In the documentation below that is inherited from {@link AbsolutePath},
@@ -93,7 +94,7 @@ export interface FsReaddirOptions extends FsPathFilterOptions {
  * @example
  * ```ts
  * const p = new FsPath('/path/to/file.txt')
- * await p.write('Hello, world!', { mkdirIfNeeded: true }) // Creates the file with content, creating parent directories as needed
+ * await p.write('Hello, world!', { makeParents: true }) // Creates the file with content, creating parent directories as needed
  * ```
  *
  */
@@ -108,7 +109,7 @@ export class FsPath extends AbsolutePath {
    * Creating an {@link FsPath} instance does not imply that the path
    * exists on the filesystem; use {@link exists}, {@link isFile}, {@link
    * isDirectory} or {@link stat} to check for existence, and use {@link
-   * write}, {@link touch}, {@link mkdir}, or {@link makeTempDirectory} to
+   * write}, {@link touch}, {@link makeDirectory}, or {@link makeTempDirectory} to
    * create files or directories.
    *
    * @example
@@ -263,12 +264,12 @@ export class FsPath extends AbsolutePath {
    * @example
    * ```ts
    * const p = new FsPath('/path/to/dir')
-   * await p.mkdir({ recursive: true }) // Creates the directory and any needed parent directories
+   * await p.makeDirectory({ makeParents: true }) // Creates the directory and any needed parent directories
    * ```
    */
-  async mkdir(opts?: { recursive?: boolean }): Promise<void> {
-    const { recursive = false } = opts ?? {}
-    await fs.mkdir(this.path_, { recursive })
+  async makeDirectory(opts?: { makeParents?: boolean }): Promise<void> {
+    const { makeParents = false } = opts ?? {}
+    await fs.mkdir(this.path_, { recursive: makeParents })
   }
 
   /**
@@ -291,20 +292,20 @@ export class FsPath extends AbsolutePath {
    * Writes content to the file, replacing or appending to the existing content.
    *
    * @param content - The content to write (string or Uint8Array).
-   * @param opts.mkdirIfNeeded - If true, create parent directories as needed (default: false).
+   * @param opts.makeParents - If true, create parent directories as needed (default: false).
    * @param opts.append - If true, append to the file instead of replacing it (default false).
    * @param opts.encoding - The file encoding (default: 'utf8' if content is string).
    *
    * @example
    * ```ts
    * const p = new FsPath('/path/to/file.txt')
-   * await p.write('Hello', { mkdirIfNeeded: true }) // Creates the file with content, creating parent directories as needed
+   * await p.write('Hello', { makeParents: true }) // Creates the file with content, creating parent directories as needed
    * await p.write(', world!', { append: true })     // Appends to the file
    * ```
    */
-  async write( content: string | Uint8Array, opts?: { mkdirIfNeeded?: boolean, append?: boolean, encoding?: BufferEncoding }): Promise<void> {
-    const { mkdirIfNeeded = false, append = false, encoding = typeof content === 'string' ? 'utf8' : undefined } = opts ?? {}
-    await this.#mkdirParentIfNeeded(mkdirIfNeeded)
+  async write( content: string | Uint8Array, opts?: { makeParents?: boolean, append?: boolean, encoding?: BufferEncoding }): Promise<void> {
+    const { makeParents = false, append = false, encoding = typeof content === 'string' ? 'utf8' : undefined } = opts ?? {}
+    await this.#makeParents(makeParents)
     await fs.writeFile(this.path_, content, {
       encoding,
       flag: append ? 'a' : 'w'
@@ -314,20 +315,17 @@ export class FsPath extends AbsolutePath {
   /**
    * Updates the file's access and modification times, or create an empty file if it does not exist.
    *
-   * @param opts.mkdirIfNeeded - If true, create parent directories as needed (default: false).
+   * @param opts.makeParents - If true, create parent directories as needed (default: false).
    *
    * @example
    * ```ts
    * const p = new FsPath('/path/to/file.txt')
-   * await p.touch({ mkdirIfNeeded: true }) // Creates the file if it does not exist, creating parent directories as needed
+   * await p.touch({ makeParents: true }) // Creates the file if it does not exist, creating parent directories as needed
    * ```
    */
-  async touch(opts?: { mkdirIfNeeded?: boolean }): Promise<void> {
-    const { mkdirIfNeeded = false } = opts ?? {}
-    if (mkdirIfNeeded) {
-      await this.parent.mkdir({ recursive: true })
-    }
-
+  async touch(opts?: { makeParents?: boolean }): Promise<void> {
+    const { makeParents = false } = opts ?? {}
+    await this.#makeParents(makeParents)
     try {
       const now = new Date()
       await fs.utimes(this.path_, now, now)
@@ -383,20 +381,20 @@ export class FsPath extends AbsolutePath {
    *
    * @param to - The target path to move to.
    * @param opts.intoDir - If true, treat `to` as a directory and move the file into it (default: false).
-   * @param opts.mkdirIfNeeded - If true, create parent directories of the target path as needed (default: false).
+   * @param opts.makeParents - If true, create parent directories of the target path as needed (default: false).
    *
    * @example
    * ```ts
    * const p1 = new FsPath('/path/to/file.txt')
    * const p2 = new FsPath('/new/path/to/file.txt')
-   * await p1.moveTo(p2, { mkdirIfNeeded: true }) // Renames (moves) the file, creating parent directories as needed
+   * await p1.moveTo(p2, { makeParents: true }) // Renames (moves) the file, creating parent directories as needed
    * ```
    */
-  async moveTo(to: AbsolutePath, opts?: { intoDir?: boolean, mkdirIfNeeded?: boolean }): Promise<void> {
-    const { intoDir = false, mkdirIfNeeded = false } = opts ?? {}
+  async moveTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean }): Promise<void> {
+    const { intoDir = false, makeParents = false } = opts ?? {}
     const target = new FsPath(to)
     const destination = intoDir ? target.join(this.filename) : target
-    await destination.#mkdirParentIfNeeded(mkdirIfNeeded)
+    await destination.#makeParents(makeParents)
     await fs.rename(this.path_, destination.path_)
   }
   
@@ -405,23 +403,23 @@ export class FsPath extends AbsolutePath {
    * Copies the file to a new path.
    * @param to - The target path to copy to.
    * @param opts.intoDir - If true, treat `to` as a directory and copy the file into it (default: false).
-   * @param opts.mkdirIfNeeded - If true, create parent directories of the target path as needed (default: false).
+   * @param opts.makeParents - If true, create parent directories of the target path as needed (default: false).
    *
    * @example
    * ```ts
    * const p1 = new FsPath('/path/to/file.txt')
    * const p2 = new FsPath('/new/path/to/file.txt')
-   * await p1.copyTo(p2, { mkdirIfNeeded: true }) // Copies the file, creating parent directories as needed
+   * await p1.copyTo(p2, { makeParents: true }) // Copies the file, creating parent directories as needed
    * 
    * const dir = new FsPath('/new/path/')
-   * await p1.copyTo(dir, { intoDir: true, mkdirIfNeeded: true }) // Copies the file into the directory, creating parent directories as needed
+   * await p1.copyTo(dir, { intoDir: true, makeParents: true }) // Copies the file into the directory, creating parent directories as needed
    * ```
    */
-  async copyTo(to: AbsolutePath, opts?: { intoDir?: boolean, mkdirIfNeeded?: boolean }): Promise<void> {
-    const { intoDir = false, mkdirIfNeeded = false } = opts ?? {}
+  async copyTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean }): Promise<void> {
+    const { intoDir = false, makeParents = false } = opts ?? {}
     const target      = new FsPath(to)
     const destination = intoDir ? target.join(this.filename) : target
-    await destination.#mkdirParentIfNeeded(mkdirIfNeeded)
+    await destination.#makeParents(makeParents)
     await fs.copyFile(this.path_, destination.path_)
   }
 
@@ -593,9 +591,9 @@ export class FsPath extends AbsolutePath {
   // --- file creation helpers ---
   //
 
-  async #mkdirParentIfNeeded(mkdirIfNeeded: boolean): Promise<void> {
-    if (mkdirIfNeeded) {
-      await this.parent.mkdir({ recursive: true })
+  async #makeParents(makeParents: boolean): Promise<void> {
+    if (makeParents) {
+      await this.parent.makeDirectory({ makeParents: true })
     }
   }
 

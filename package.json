@@ -5,7 +5,6 @@
   "keywords": [
     "file",
     "filename",
-    "filepath",
     "filesystem",
     "fs",
     "node",
@@ -64,7 +63,7 @@
     "watch-eslint": "^1.1.0"
   },
   "dependencies": {
-    "@thingts/filepath": "^1.0.1",
+    "@thingts/path": "^1.0.2",
     "fast-glob": "^3.3.3"
   }
 }

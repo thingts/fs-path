@@ -9,12 +9,12 @@
   "includeHierarchySummary": false,
   "name": "@thingts/fs-path",
   "navigationLinks": {
-    "github.com/thingts/filepath": "https://github.com/thingts/fs-path"
+    "github.com/thingts/fs-path": "https://github.com/thingts/fs-path"
   },
   "out": "docs",
   "readme": "typedoc/readme.md",
   "tsconfig": "tsconfig.json",
   "externalSymbolLinkMappings": {
-    "@thingts/filepath": { "AbsolutePath": "https://thingts.github.io/filepath/classes/AbsolutePath.html" }
+    "@thingts/path": { "AbsolutePath": "https://thingts.github.io/path/classes/AbsolutePath.html" }
   }
 }

@@ -13,14 +13,14 @@ Instead of juggling raw strings with
 [node:fs](https://nodejs.org/api/fs.html), `@thingts/fs-path` makes
 filesystem paths **first-class citizens** in your code.
 
-Built on [`@thingts/filepath`](https://www.npmjs.com/package/@thingts/filepath) for path manipulation, and adds async filesystem operations.
+Built on [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for path manipulation, and adds async filesystem operations.
 
 * Immutable, chainable path objects with type-safe operations
 * Path normalization and resolution on construction
 * Easy access to path parts (filename, stem, extension, parent, etc)
 * Path transformations (replace stem/extension/parent, transform filename, etc)
 * Path navigation (join, resolve, relativeTo, descendsFrom, etc)
-* Async filesystem operations (exists, isFile, isDirectory, stat, read, write, mkdir, readdir, glob, etc)
+* Async filesystem operations (exists, isFile, isDirectory, stat, read, write, makeDirectory, readdir, glob, etc)
 * Temporary directory & file management
 
 Together, these features give you a safer, more expressive way to work with
@@ -30,7 +30,7 @@ paths, files, and directories in Node.js
 
 ⚠️ Currently only POSIX-style paths are supported (e.g. `/foo/bar`).
 
-💡 For environments outside Node.js (like browser or Deno), [`@thingts/filepath`](https://www.npmjs.com/package/@thingts/filepath) provides path manipulation with no dependencies (and no file operations).
+💡 For environments outside Node.js (like browser or Deno), [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) provides path manipulation with no dependencies (and no file operations).
 
 🔧 This package supports most commonly used [`node:fs`](https://nodejs.org/api/fs.html) features & options.  But not all; contributions to expand functionality are welcome.
 
@@ -40,14 +40,14 @@ The package provides a set of classes to represent and manipulate
 filesystem paths.  All classes are immutable; any path manipulation
 operation returns a new instance.
 
-Most commonly, you'll likely use `FsPath`, but the full set of exported classes is:
+Most commonly, you'll likely only use `FsPath`, but the full set of classes exposed by the package are:
 
-* `FsPath` - Absolute path, with path manipulation and filesystem operations (extends `@thingts/filepath`'s [AbsolutePath](https://thingts.github.io/filepath/classes/AbsolutePath.html))
-* `FsRelativePath` - Relative path with path manipulation.  (Re-export of [RelativePath](https://thingts.github.io/filepath/classes/RelativePath.html) from [`@thingts/filepath`](https://www.npmjs.com/package/@thingts/filepath) for convenience)
-* `FsFilename` - Immutable filename with file part manipulation.  (Re-export of [Filename](https://thingts.github.io/filepath/classes/Filename.html) from [`@thingts/filepath`](https://www.npmjs.com/package/@thingts/filepath) for convenience)
+* `FsPath` - Absolute path, with path manipulation and filesystem operations (extends [AbsolutePath](https://thingts.github.io/path/classes/AbsolutePath.html) from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path))
+* `RelativePath` - Relative path with path manipulation.  (Re-exported from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for convenience)
+* `Filename` - Immutable filename with file part manipulation.  (Re-exported from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for convenience)
 
 The classes work together to maintain type safety and ergonomics.  For
-example, the `.relativeTo()` method of `FsPath` returns an `FsRelativePath`
+example, the `.relativeTo()` method of `FsPath` returns an `RelativePath`
 object -- which would need to be joined to a base `FsPath` in order to
 perform filesystem operations.
 
@@ -105,7 +105,7 @@ const base = new FsPath('/projects/demo')
 base.join('src/index.ts')               // FsPath: '/projects/demo/src/index.ts'
 base.descendsFrom('/projects')          // true
 base.parent.equals('/projects')         // true
-const rel = base.join('src/main.ts').relativeTo(base) // FsRelativePath: 'src/main.ts'
+const rel = base.join('src/main.ts').relativeTo(base) // RelativePath: 'src/main.ts'
 ```
 
 #### Filesystem operations
@@ -115,7 +115,7 @@ const dir = new FsPath('/projects/demo')
 const file = dir.join('logs/app.log')
 
 // --- Writing and reading ---
-await file.write('start\n', { mkdirIfNeeded: true })
+await file.write('start\n', { makeParents: true })
 await file.write('listening\n', { append: true })
 await file.read()       // string: 'start\nlistening\n'
 
@@ -127,7 +127,7 @@ await file.parent.isDirectory() // true
 await file.stat()         // fs.Stats object
 
 // --- Directory operations...
-await dir.join('sub').mkdir()
+await dir.join('sub').makeDirectory()
 const files = await dir.readdir()          // [FsPath, ...]
 const txts  = await dir.glob('**/*.log')   // glob within a directory
 ```
