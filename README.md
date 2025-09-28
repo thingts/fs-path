@@ -30,7 +30,7 @@ paths, files, and directories in Node.js
 
 Under the hood, this package uses:
 
-* [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for path manipulation
+* [`@thingts/path`](https://github.com/thingts/path) for path manipulation
 * [`node:fs/promises`](https://nodejs.org/api/fs/promises.html) for async filesystem operations
 * [`fast-glob`](https://www.npmjs.com/package/fast-glob) for globbing
 
@@ -43,9 +43,9 @@ operation returns a new instance.
 
 Most commonly, you'll likely only use `FsPath`, but the full set of classes exposed by the package are:
 
-* `FsPath` - Absolute path, with path manipulation and filesystem operations (extends [AbsolutePath](https://thingts.github.io/path/classes/AbsolutePath.html) from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path))
-* `RelativePath` - Relative path with path manipulation.  (Re-exported for convenience from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path))
-* `Filename` - Immutable filename with file part manipulation.  (Re-exported for convenience from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path))
+* `FsPath` - Absolute path, with path manipulation and filesystem operations (extends [AbsolutePath](https://thingts.github.io/path/classes/AbsolutePath.html) from [`@thingts/path`](https://github.com/thingts/path))
+* `RelativePath` - Relative path with path manipulation.  (Re-exported for convenience from [`@thingts/path`](https://github.com/thingts/path))
+* `Filename` - Immutable filename with file part manipulation.  (Re-exported for convenience from [`@thingts/path`](https://github.com/thingts/path))
 
 The classes work together to maintain type safety and ergonomics.  For
 example, the `.relativeTo()` method of `FsPath` returns a `RelativePath`
@@ -157,7 +157,7 @@ const file = new FsPath('/project/tempfile.txt').disposable()
 
 ## Related
 
-* [@thingts/path](https://www.npmjs.com/package/@thingts/path) – Path manipulation only (no fs), works in Node.js, Deno, and the browser.
+* [@thingts/path](https://github.com/thingts/path) – Path manipulation only (no fs), works in Node.js, Deno, and the browser.
 
 ## Contributing
 

@@ -76,7 +76,7 @@ export interface FsReaddirOptions extends FsPathFilterOptions {
  * {@link FsPath} instances are normalized and immutable.
  *
  * {@link FsPath} inherits from {@link AbsolutePath} of
- * [`@thingts/path`](npmjs.com/package/@thingts/path), but with added methods
+ * [`@thingts/path`](https://github.com/thingts/path), but with added methods
  * for filesystem access.
  *
  * Having a {@link FsPath} doesn't imply that a file or directory exists at
