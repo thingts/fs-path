@@ -1,19 +1,21 @@
 # @thingts/fs-path
 
 [![npm version](https://img.shields.io/npm/v/@thingts/fs-path.svg)](https://www.npmjs.com/package/@thingts/fs-path)
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/thingts/fs-path/ci.yaml)](https://github.com/thingts/fs-path/actions/workflows/ci.yaml)
 [![docs](https://img.shields.io/badge/docs-typedoc-blue)](https://thingts.github.io/fs-path/)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/thingts/fs-path/ci.yaml)](https://github.com/thingts/fs-path/actions/workflows/ci.yaml)
 [![GitHub License](https://img.shields.io/github/license/thingts/fs-path)](LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@thingts/fs-path)](https://bundlephobia.com/package/@thingts/fs-path)
 
 
-Type-safe, ergonomic package for working with paths and fs in Node.js.
+Type-safe, ergonomic package for working with paths and files in Node.js
 
 ## Why?
 
 Instead of juggling raw strings with
 [node:path](https://nodejs.org/api/path.html) and
-[node:fs](https://nodejs.org/api/fs.html), this package makes
-filesystem paths **first-class citizens** in your code.
+[node:fs](https://nodejs.org/api/fs.html), this package makes file paths
+**first-class citizens** in your code -- with type-safe manipulation and
+convenient filesystem methods.
 
 ## Features
 
@@ -131,16 +133,13 @@ const files = await dir.readdir()          // [FsPath, ...]
 const txts  = await dir.glob('**/*.log')   // glob within a directory
 ```
 
-#### Temporary files and directories
-
-Automatically deletes disposable files and directories when they're no
-longer needed.
+#### Temporary (a.k.a. disposable) files and directories
 
 ```typescript
 // --- Explicit resource management ---
 {
+    using dir  = await FsPath.makeTempDirectory() // returns disposable directory
     using file = new FsPath('/project/tempfile.txt').disposable() // register for disposal
-    using dir  = await FsPath.makeTempDirectory() // returns already disposable object
 
     dir.exists() // true
     file.write('data') // create file
@@ -150,7 +149,7 @@ longer needed.
     // dir and file are removed when they go out of scope
 }
 
-// --- Cleanup eventually, on gc or exit ---
+// --- Removed eventually, on gc or exit ---
 const dir  = await FsPath.makeTempDirectory() 
 const file = new FsPath('/project/tempfile.txt').disposable()
 ```
