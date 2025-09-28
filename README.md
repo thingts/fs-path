@@ -8,12 +8,14 @@
 
 Type-safe, ergonomic package for working with paths and fs in Node.js.
 
+## Why?
+
 Instead of juggling raw strings with
 [node:path](https://nodejs.org/api/path.html) and
-[node:fs](https://nodejs.org/api/fs.html), `@thingts/fs-path` makes
+[node:fs](https://nodejs.org/api/fs.html), this package makes
 filesystem paths **first-class citizens** in your code.
 
-Built on [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for path manipulation, and adds async filesystem operations.
+## Features
 
 * Immutable, chainable path objects with type-safe operations
 * Path normalization and resolution on construction
@@ -26,42 +28,39 @@ Built on [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for path
 Together, these features give you a safer, more expressive way to work with
 paths, files, and directories in Node.js
 
-#### Notes:
+Under the hood, this package uses:
 
-⚠️ Currently only POSIX-style paths are supported (e.g. `/foo/bar`).
+* [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for path manipulation
+* [`node:fs/promises`](https://nodejs.org/api/fs/promises.html) for async filesystem operations
+* [`fast-glob`](https://www.npmjs.com/package/fast-glob) for globbing
 
-💡 For environments outside Node.js (like browser or Deno), [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) provides path manipulation with no dependencies (and no file operations).
-
-🔧 This package supports most commonly used [`node:fs`](https://nodejs.org/api/fs.html) features & options.  But not all; contributions to expand functionality are welcome.
 
 ## Overview
 
-The package provides a set of classes to represent and manipulate
+**@thingts/fs-path** provides a set of classes to represent and manipulate
 filesystem paths.  All classes are immutable; any path manipulation
 operation returns a new instance.
 
 Most commonly, you'll likely only use `FsPath`, but the full set of classes exposed by the package are:
 
 * `FsPath` - Absolute path, with path manipulation and filesystem operations (extends [AbsolutePath](https://thingts.github.io/path/classes/AbsolutePath.html) from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path))
-* `RelativePath` - Relative path with path manipulation.  (Re-exported from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for convenience)
-* `Filename` - Immutable filename with file part manipulation.  (Re-exported from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path) for convenience)
+* `RelativePath` - Relative path with path manipulation.  (Re-exported for convenience from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path))
+* `Filename` - Immutable filename with file part manipulation.  (Re-exported for convenience from [`@thingts/path`](https://www.npmjs.com/package/@thingts/path))
 
 The classes work together to maintain type safety and ergonomics.  For
-example, the `.relativeTo()` method of `FsPath` returns an `RelativePath`
-object -- which would need to be joined to a base `FsPath` in order to
+example, the `.relativeTo()` method of `FsPath` returns a `RelativePath`
+-- which would need to be joined to a base `FsPath` in order to
 perform filesystem operations.
+
+> ⚠️ Currently only POSIX-style paths are supported (e.g. `/foo/bar`).
+
+> 🔧 This package supports most commonly used [`node:fs`](https://nodejs.org/api/fs.html) features & options.  But not all; contributions to expand functionality are welcome.
+
 
 ## Installation
 
 ```bash
-# with npm
-npm install @thingsts/fs-path
-
-# with yarn
-yarn add @thingsts/fs-path
-
-# with pnpm
-pnpm add @thingsts/fs-path
+npm install @thingts/fs-path
 ```
 
 ## Usage examples
@@ -155,6 +154,10 @@ longer needed.
 const dir  = await FsPath.makeTempDirectory() 
 const file = new FsPath('/project/tempfile.txt').disposable()
 ```
+
+## Related
+
+* [@thingts/path](https://www.npmjs.com/package/@thingts/path) – Path manipulation only (no fs), works in Node.js, Deno, and the browser.
 
 ## Contributing
 
