@@ -21,9 +21,7 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: 'npm'
 
-      - run: npm ci
-      - run: npm run build
-      - run: npm test --if-present
+      - uses: ./.github/actions/setup-and-test
 
       # Optional: ensure README & types are included in the tarball
       - run: npm pack --dry-run

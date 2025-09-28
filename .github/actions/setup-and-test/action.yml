@@ -1,0 +1,21 @@
+name: Setup and Test
+
+description: Install, build, lint and test the package
+
+runs:
+  using: "composite"
+  steps:
+    - run: npm ci
+      shell: bash
+
+    - run: npm run lint
+      shell: bash
+
+    - run: npm run build
+      shell: bash
+
+    - run: npm config delete always-auth || true
+      shell: bash
+
+    - run: npm test
+      shell: bash
