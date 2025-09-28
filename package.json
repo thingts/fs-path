@@ -1,6 +1,6 @@
 {
   "name": "@thingts/fs-path",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Type-safe, ergonomic package for working with paths and fs in Node.js",
   "keywords": [
     "copy",
