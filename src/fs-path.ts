@@ -9,13 +9,13 @@ import { tmpdir } from 'node:os'
  * Options for filtering paths, used by {@link FsPath.readdir} and {@link FsPath.glob}
  */
 interface FsPathFilterOptions {
-  /** If true, only include files in the result (default false) */
+  /** If true, only include files in the result. (Default: false) */
   onlyFiles?:       boolean
 
-  /** If true, only include directories in the result (default false) */
+  /** If true, only include directories in the result. (Default: false) */
   onlyDirs?:        boolean
 
-  /** If true, include dotfiles in the result (default true) */
+  /** If true, include dotfiles in the result. (Default: true) */
   includeDotfiles?: boolean
 }
 
@@ -63,27 +63,30 @@ export interface FsReaddirOptions extends FsPathFilterOptions {
 
   /**
    * If true, return an empty array if the directory does not exist, rather
-   * than throwing an error (default: false).
+   * than throwing an error. (Default: false)
    */
   allowMissing?: boolean
 }
 
 /**
- * Represents an absolute filesystem path (i.e. a path starting at the root, i.e.
- * has a leading separator), and provides methods for path resolution,
- * manipulation and queries as well as filesystem operations.
+ * Represents an absolute filesystem path (i.e. a path starting at the root with
+ * a leading separator), and provides methods for path resolution,
+ * manipulation and queries as well as (async) filesystem operations.
  *
  * {@link FsPath} instances are normalized and immutable.
  *
- * {@link FsPath} inherits from {@link AbsolutePath} of
+ * {@link FsPath} extends {@link AbsolutePath} of
  * [`@thingts/path`](https://github.com/thingts/path), but with added methods
  * for filesystem access.
  *
- * Having a {@link FsPath} doesn't imply that a file or directory exists at
+ * Having a {@link FsPath} does not imply that a file or directory exists at
  * that path in the filesystem; use {@link exists}, {@link isFile}, {@link
  * isDirectory} or {@link stat} to check for existence, and use {@link
  * write}, {@link touch}, {@link makeDirectory}, or {@link makeTempDirectory} to
  * create files or directories.
+ *
+ * Methods that create or modify files or directories return a `Promise<this>`,
+ * allowing for chaining
  *
  * ⚠️  In the documentation below that is inherited from {@link AbsolutePath},
  * examples that refer to `AbsolutePath` apply equally to `FsPath` -- in
@@ -94,7 +97,17 @@ export interface FsReaddirOptions extends FsPathFilterOptions {
  * @example
  * ```ts
  * const p = new FsPath('/path/to/file.txt')
- * await p.write('Hello, world!', { makeParents: true }) // Creates the file with content, creating parent directories as needed
+ * await p.write('Hello, world!', { makeParents: true })
+ * const content = await p.read() // Reads the file content
+ *
+ * // With chaining
+ * const p2 = await new FsPath('/path/to/another.txt').write('data', { makeParents: true })
+ *
+ * // Multiple chaining is possible, though less ergonomic
+ * const p3 = await new FsPath('/path/to/yet-another.txt').write('data', { makeParents: true }).then(p => p.append('more data'))
+ *
+ * const p4 = await (await new FsPath('/path/to/yet-another.txt').write('data', { makeParents: true })).append('more data')
+ *
  * ```
  *
  */
@@ -242,8 +255,10 @@ export class FsPath extends AbsolutePath {
    * // Remove write permission for others => rw-rw-r--
    * await p.setPermissions({ others: { write: true } }, { operation: 'clear' })
    * ```
+   *
+   * @returns A Promise resolving to this instance, for chaining.
    */
-  async setPermissions(spec: FsPermissionSpec, opts?: { operation: 'assign' | 'overlay' | 'clear' }) : Promise<void> {
+  async setPermissions(spec: FsPermissionSpec, opts?: { operation: 'assign' | 'overlay' | 'clear' }) : Promise<this> {
     const { operation = 'assign' } = opts ?? {}
 
     const mode = Self.#buildMode(spec)
@@ -255,26 +270,30 @@ export class FsPath extends AbsolutePath {
       mode
 
     await fs.chmod(this.path_, final)
+    return this
   }
 
   /**
    * Create a directory at this path.
-   * @param opts.recursive - If true, create parent directories as needed.
+   * @param opts.makeParents - If true, create parent directories as needed.
    *
    * @example
    * ```ts
    * const p = new FsPath('/path/to/dir')
    * await p.makeDirectory({ makeParents: true }) // Creates the directory and any needed parent directories
    * ```
+   *
+   * @returns A Promise resolving to this instance, for chaining.
    */
-  async makeDirectory(opts?: { makeParents?: boolean }): Promise<void> {
+  async makeDirectory(opts?: { makeParents?: boolean }): Promise<this> {
     const { makeParents = false } = opts ?? {}
     await fs.mkdir(this.path_, { recursive: makeParents })
+    return this
   }
 
   /**
    * Read the contents of the file as a string.
-   * @param opts.encoding - The file encoding (default: 'utf8').
+   * @param opts.encoding - The file encoding. (Default: 'utf8')
    * @returns The file contents as a string.
    *
    * @example
@@ -292,9 +311,9 @@ export class FsPath extends AbsolutePath {
    * Writes content to the file, replacing or appending to the existing content.
    *
    * @param content - The content to write (string or Uint8Array).
-   * @param opts.makeParents - If true, create parent directories as needed (default: false).
-   * @param opts.append - If true, append to the file instead of replacing it (default false).
-   * @param opts.encoding - The file encoding (default: 'utf8' if content is string).
+   * @param opts.makeParents - If true, create parent directories as needed. (Default: false)
+   * @param opts.append - If true, append to the file instead of replacing it. (Default: false)
+   * @param opts.encoding - The file encoding. (Default: 'utf8' if content is string)
    *
    * @example
    * ```ts
@@ -302,28 +321,33 @@ export class FsPath extends AbsolutePath {
    * await p.write('Hello', { makeParents: true }) // Creates the file with content, creating parent directories as needed
    * await p.write(', world!', { append: true })     // Appends to the file
    * ```
+   *
+   * @returns A Promise resolving to this instance, for chaining.
    */
-  async write( content: string | Uint8Array, opts?: { makeParents?: boolean, append?: boolean, encoding?: BufferEncoding }): Promise<void> {
+  async write( content: string | Uint8Array, opts?: { makeParents?: boolean, append?: boolean, encoding?: BufferEncoding }): Promise<this> {
     const { makeParents = false, append = false, encoding = typeof content === 'string' ? 'utf8' : undefined } = opts ?? {}
     await this.#makeParents(makeParents)
     await fs.writeFile(this.path_, content, {
       encoding,
       flag: append ? 'a' : 'w'
     })
+    return this
   }
 
   /**
    * Updates the file's access and modification times, or create an empty file if it does not exist.
    *
-   * @param opts.makeParents - If true, create parent directories as needed (default: false).
+   * @param opts.makeParents - If true, create parent directories as needed. (Default: false)
    *
    * @example
    * ```ts
-   * const p = new FsPath('/path/to/file.txt')
+   * const p = await new FsPath('/path/to/file.txt')
    * await p.touch({ makeParents: true }) // Creates the file if it does not exist, creating parent directories as needed
    * ```
+   *
+   * @returns A Promise resolving to this instance, for chaining.
    */
-  async touch(opts?: { makeParents?: boolean }): Promise<void> {
+  async touch(opts?: { makeParents?: boolean }): Promise<this> {
     const { makeParents = false } = opts ?? {}
     await this.#makeParents(makeParents)
     try {
@@ -336,6 +360,7 @@ export class FsPath extends AbsolutePath {
         throw err
       }
     }
+    return this
   }
   
   /**
@@ -359,7 +384,7 @@ export class FsPath extends AbsolutePath {
   /**
    * Removes the file or directory.
    *
-   * @param opts.throwIfMissing - If true, throw an error if the path does not exist (default: false).
+   * @param opts.throwIfMissing - If true, throw an error if the path does not exist. (Default: false)
    *
    * @example
    * ```ts
@@ -367,43 +392,53 @@ export class FsPath extends AbsolutePath {
    * await p.remove() // Removes the file if it exists, does nothing if it does not exist
    * await p.remove({ throwIfMissing: true }) // Removes the file, throws an error if it does not exist
    * ```
+   *
+   * @returns A Promise resolving to this instance, for chaining. (The path object remains valid even though the file or directory has been removed.)
    */
-  async remove(opts?: { throwIfMissing?: boolean }): Promise<void> {
+  async remove(opts?: { throwIfMissing?: boolean }): Promise<this> {
     const { throwIfMissing = false } = opts ?? {}
     await fs.rm(this.path_, {
       recursive: true,
       force: !throwIfMissing
     })
+    return this
   }
 
   /**
-   * Move (rename) the file or directory to a new path.
+   * Move (rename) this file or directory to a new location.
    *
    * @param to - The target path to move to.
-   * @param opts.intoDir - If true, treat `to` as a directory and move the file into it (default: false).
-   * @param opts.makeParents - If true, create parent directories of the target path as needed (default: false).
+   * @param opts.intoDir - If true, treat `to` as a directory and move the file into it. (Default: false)
+   * @param opts.makeParents - If true, create parent directories of the target path as needed. (Default: false)
    *
    * @example
    * ```ts
    * const p1 = new FsPath('/path/to/file.txt')
    * const p2 = new FsPath('/new/path/to/file.txt')
    * await p1.moveTo(p2, { makeParents: true }) // Renames (moves) the file, creating parent directories as needed
+   *
+   * const dir = new FsPath('/new/path/')
+   * const p3 = await p2.moveTo(dir, { intoDir: true, makeParents: true }) // Moves the file into the directory
+   * console.log(p3.toString()) // /new/path/file.txt
    * ```
+   *
+   * @returns A Promise resolving to a new {@link FsPath} for the final path (either `to` or `to.join(this.filename)` based on `opts.intoDir`)
    */
-  async moveTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean }): Promise<void> {
+  async moveTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean }): Promise<FsPath> {
     const { intoDir = false, makeParents = false } = opts ?? {}
     const target = new FsPath(to)
     const destination = intoDir ? target.join(this.filename) : target
     await destination.#makeParents(makeParents)
     await fs.rename(this.path_, destination.path_)
+    return destination
   }
   
   
   /**
-   * Copies the file to a new path.
+   * Copies this file to a new location.
    * @param to - The target path to copy to.
-   * @param opts.intoDir - If true, treat `to` as a directory and copy the file into it (default: false).
-   * @param opts.makeParents - If true, create parent directories of the target path as needed (default: false).
+   * @param opts.intoDir - If true, treat `to` as a directory and copy the file into it. (Default: false)
+   * @param opts.makeParents - If true, create parent directories of the target path as needed. (Default: false)
    *
    * @example
    * ```ts
@@ -412,24 +447,28 @@ export class FsPath extends AbsolutePath {
    * await p1.copyTo(p2, { makeParents: true }) // Copies the file, creating parent directories as needed
    * 
    * const dir = new FsPath('/new/path/')
-   * await p1.copyTo(dir, { intoDir: true, makeParents: true }) // Copies the file into the directory, creating parent directories as needed
+   * const p3 = await p1.copyTo(dir, { intoDir: true, makeParents: true }) // Copies the file into the directory
+   * console.log(p3.toString()) // /new/path/file.txt
    * ```
+   *
+   * @returns A Promise resolving to a new {@link FsPath} for the path of the copy (either `to` or `to.join(this.filename)` based on `opts.intoDir`)
    */
-  async copyTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean }): Promise<void> {
+  async copyTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean }): Promise<FsPath> {
     const { intoDir = false, makeParents = false } = opts ?? {}
     const target      = new FsPath(to)
     const destination = intoDir ? target.join(this.filename) : target
     await destination.#makeParents(makeParents)
     await fs.copyFile(this.path_, destination.path_)
+    return destination
   }
 
   /**
    * Reads the contents of the directory.
    *
-   * @param opts.allowMissing - If true, return an empty array if the directory does not exist, rather than throwing an error (default: false).
-   * @param opts.onlyFiles - If true, only include files in the result (default: false).
-   * @param opts.onlyDirs - If true, only include directories in the result (default: false).
-   * @param opts.includeDotfiles - If true, include dotfiles in the result (default: true).
+   * @param opts.allowMissing - If true, return an empty array if the directory does not exist, rather than throwing an error. (Default: false)
+   * @param opts.onlyFiles - If true, only include files in the result. (Default: false)
+   * @param opts.onlyDirs - If true, only include directories in the result. (Default: false)
+   * @param opts.includeDotfiles - If true, include dotfiles in the result. (Default: true)
    *
    * @returns An array of {@link FsPath} objects representing the entries in the directory.
    *
@@ -462,10 +501,10 @@ export class FsPath extends AbsolutePath {
    * Uses [fast-glob](https://www.npmjs.com/package/fast-glob) under the hood.
    *
    * @param pattern - The glob pattern to match
-   * @param opts.allowMissing - If true, return an empty array if the directory does not exist, rather than throwing an error (default: false).
-   * @param opts.onlyFiles - If true, only include files in the result (default: false).
-   * @param opts.onlyDirs - If true, only include directories in the result (default: false).
-   * @param opts.includeDotfiles - If true, include dotfiles in the result (default: true).
+   * @param opts.allowMissing - If true, return an empty array if the directory does not exist, rather than throwing an error. (Default: false)
+   * @param opts.onlyFiles - If true, only include files in the result. (Default: false)
+   * @param opts.onlyDirs - If true, only include directories in the result. (Default: false)
+   * @param opts.includeDotfiles - If true, include dotfiles in the result. (Default: true)
    *
    * @returns An array of {@link FsPath} objects representing the matching
    * entries.
