@@ -1,3 +1,4 @@
+import child_process from 'node:child_process'
 import { Filename, RelativePath, FsPath } from '$src'
 import { beforeEach, describe, it, expect } from 'vitest'
 import { tmpdir } from 'node:os'
@@ -595,6 +596,50 @@ describe('FsPath', () => {
       }
       expect(await file.exists()).toBe(true)
       expect(await dir.exists()).toBe(false) // dir was not retained
+    })
+
+    it('disposes on gc', async () => {
+      if (!global.gc) {
+        expect('gc() is not available. set config poolOptions.forks.execArgv === ["--expose-gc"]').toBe(false)
+      }
+
+      const root = await FsPath.makeTempDirectory()
+      const file = root.join('file.txt')
+      await file.write('data')
+      expect(await file.exists()).toBe(true)
+
+      let disposable: FsPath | null = new FsPath(file).disposable()
+      expect(await disposable.exists()).toBe(true)
+      disposable = null
+      for (let i = 0; i < 10; i++) {
+        global.gc!()                            // eslint-disable-line @typescript-eslint/no-non-null-assertion
+        await new Promise(r => setTimeout(r, 100))
+        if (!await file.exists()) { break }
+      }
+      expect(await file.exists()).toBe(false)
+    })
+
+    it('disposes at process exit', async () => {
+      const root = await FsPath.makeTempDirectory()
+      const program = root.join('program.ts')
+      await program.write(`
+        import { FsPath } from '${__dirname}/../src'
+        const path = new FsPath(process.argv[2])
+        if (path.stem == 'dispose-of-me') { // ensure disposing the right thing!
+          path.disposable()
+        }
+      `)
+      const file = root.join('dispose-of-me.txt')
+      await file.write('content')
+      expect(await file.exists()).toBe(true)
+      await new Promise<void>((resolve, reject) => {
+        child_process.exec(`npx --quiet tsx ${String(program)} ${String(file)}`, (error, _stdout, stderr) => {
+          if (error) { reject(error) }
+          else if (stderr) { reject(new Error(stderr)) }
+          else { resolve() }
+        })
+      })
+      expect(await file.exists()).toBe(false)
     })
   })
 

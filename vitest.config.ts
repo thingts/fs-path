@@ -6,5 +6,10 @@ export default defineConfig({
     alias: {
       '$src': '/src/index.ts',
     },
+    poolOptions: {
+      forks: {
+        execArgv: ['--expose-gc'],
+      },
+    },
   },
 })
