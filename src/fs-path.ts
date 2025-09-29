@@ -6,7 +6,7 @@ import { promises as fs, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 
 /**
- * Options for filtering paths, used by {@link FsPath.readdir} and {@link FsPath.glob}
+ * Options for filtering paths, used by {@link FsPath.readDirectory} and {@link FsPath.glob}
  */
 interface FsPathFilterOptions {
   /** If true, only include files in the result. (Default: false) */
@@ -56,7 +56,7 @@ export type FsPermissionSpec = {
 }
 
 /**
- * Options for reading directories, used by {@link FsPath.readdir} and
+ * Options for reading directories, used by {@link FsPath.readDirectory} and
  * {@link FsPath.glob}
  */
 export interface FsReadDirectoryOptions extends FsPathFilterOptions {
@@ -480,7 +480,7 @@ export class FsPath extends AbsolutePath {
    * @example
    * ```ts
    * const dir = new FsPath('/path/to/dir')
-   * const paths = await dir.readdir()
+   * const paths = await dir.readDirectory()
    * for (const path of paths) {
    *   console.log(path.filename.toString())
    * }
