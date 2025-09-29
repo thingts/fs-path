@@ -112,9 +112,7 @@ export type FsReaddirOptions = FsReadDirectoryOptions
  * const p3 = await new FsPath('/path/to/yet-another.txt').write('data', { makeParents: true }).then(p => p.append('more data'))
  *
  * const p4 = await (await new FsPath('/path/to/yet-another.txt').write('data', { makeParents: true })).append('more data')
- *
  * ```
- *
  */
 export class FsPath extends AbsolutePath {
 

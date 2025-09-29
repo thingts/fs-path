@@ -6,6 +6,9 @@
   "excludeNotDocumented": true,
   "excludeNotDocumentedKinds": ["Class", "Module"],
   "excludePrivate": true,
+  "externalSymbolLinkMappings": {
+    "@thingts/path": { "AbsolutePath": "https://thingts.github.io/path/classes/AbsolutePath.html" }
+  },
   "includeHierarchySummary": false,
   "includeVersion": true,
   "name": "@thingts/fs-path",
@@ -17,7 +20,9 @@
   "readme": "typedoc/readme.md",
   "theme": "typedoc-github-theme",
   "tsconfig": "tsconfig.json",
-  "externalSymbolLinkMappings": {
-    "@thingts/path": { "AbsolutePath": "https://thingts.github.io/path/classes/AbsolutePath.html" }
-  }
+  "visibilityFilters": {
+        "protected": false,
+        "inherited": true,
+        "external": true
+    }
 }
