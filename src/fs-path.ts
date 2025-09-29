@@ -59,14 +59,19 @@ export type FsPermissionSpec = {
  * Options for reading directories, used by {@link FsPath.readdir} and
  * {@link FsPath.glob}
  */
-export interface FsReaddirOptions extends FsPathFilterOptions {
-
+export interface FsReadDirectoryOptions extends FsPathFilterOptions {
   /**
    * If true, return an empty array if the directory does not exist, rather
    * than throwing an error. (Default: false)
    */
   allowMissing?: boolean
 }
+
+/**
+ * @deprecated Use FsReadDirectoryOptions instead.
+ * @hidden
+ */
+export type FsReaddirOptions = FsReadDirectoryOptions 
 
 /**
  * Represents an absolute filesystem path (i.e. a path starting at the root with
@@ -481,7 +486,7 @@ export class FsPath extends AbsolutePath {
    * }
    * ```
    */
-  async readdir(opts?: FsReaddirOptions): Promise<FsPath[]> {
+  async readDirectory(opts?: FsReadDirectoryOptions): Promise<FsPath[]> {
     const { allowMissing = false, ...filterOptions } = opts ?? {}
     try {
       const entries = await fs.readdir(this.path_)
@@ -494,6 +499,12 @@ export class FsPath extends AbsolutePath {
       throw err
     }
   }
+
+  /**
+   * @deprecated Use readDirectory instead.
+   * @hidden
+   */
+  get readdir(): (opts?: FsReadDirectoryOptions) => Promise<FsPath[]> { return this.readDirectory.bind(this) } // alias
 
   /**
    * Finds files and directories matching a glob pattern within this directory.
@@ -518,7 +529,7 @@ export class FsPath extends AbsolutePath {
    * }
    * ```
    */
-  async glob(pattern: string | Filename, opts?: FsReaddirOptions): Promise<FsPath[]> {
+  async glob(pattern: string | Filename, opts?: FsReadDirectoryOptions): Promise<FsPath[]> {
     const { allowMissing = false, includeDotfiles, onlyDirs, onlyFiles } = { ...FilterOptionDefaults, ...opts }
     // fs-glob will return an empty array if the directory does not exist,
     // but we want to throw ENOENT unless allowMissing is set.

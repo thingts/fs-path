@@ -395,31 +395,31 @@ describe('FsPath', () => {
       })
     })
 
-    describe('readdir()', () => {
+    describe('readDirectory()', () => {
       it('returns FsPath objects', async () => {
         await root.join('a.txt').touch()
         await root.join('b.txt').touch()
 
-        const files = await root.readdir()
+        const files = await root.readDirectory()
         const names = files.map(f => f.filename.toString()).sort()
         expect(names).toEqual(['a.txt', 'b.txt'])
       })
 
       it('throws if directory is missing', async () => {
         const ghost = root.join('ghost-dir')
-        await expect(() => ghost.readdir()).rejects.toThrow('ENOENT: no such file or directory')
+        await expect(() => ghost.readDirectory()).rejects.toThrow('ENOENT: no such file or directory')
       })
 
       it('returns [] if directory is missing and allowMissing is true', async () => {
         const ghost = root.join('ghost-dir')
-        const result = await ghost.readdir({ allowMissing: true })
+        const result = await ghost.readDirectory({ allowMissing: true })
         expect(result).toEqual([])
       })
 
       it('throws if called on a file', async () => {
         const file = await root.join('file.txt').touch()
-        await expect(() => file.readdir()).rejects.toThrow(/ENOTDIR/)
-        await expect(() => file.readdir({ allowMissing: true })).rejects.toThrow(/ENOTDIR/)
+        await expect(() => file.readDirectory()).rejects.toThrow(/ENOTDIR/)
+        await expect(() => file.readDirectory({ allowMissing: true })).rejects.toThrow(/ENOTDIR/)
       })
 
       it('filters files based on options', async () => {
@@ -427,16 +427,16 @@ describe('FsPath', () => {
         await root.join('visible.txt').touch()
         await root.join('subdir').makeDirectory()
 
-        const all = await root.readdir()
+        const all = await root.readDirectory()
         expect(all.length).toBe(3)
 
-        const onlyFiles = await root.readdir({ onlyFiles: true })
+        const onlyFiles = await root.readDirectory({ onlyFiles: true })
         expect(onlyFiles.map(f => String(f.filename)).sort()).toEqual(['.hidden', 'visible.txt'])
 
-        const onlyDirs = await root.readdir({ onlyDirs: true })
+        const onlyDirs = await root.readDirectory({ onlyDirs: true })
         expect(onlyDirs.map(f => String(f.filename))).toEqual(['subdir'])
 
-        const noDotfiles = await root.readdir({ includeDotfiles: false })
+        const noDotfiles = await root.readDirectory({ includeDotfiles: false })
         expect(noDotfiles.map(f => String(f.filename)).sort()).toEqual(['subdir', 'visible.txt'])
       })
     })
