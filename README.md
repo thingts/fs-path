@@ -24,7 +24,7 @@ convenient filesystem methods.
 * Easy access to path parts (filename, stem, extension, parent, etc)
 * Path transformations (replace stem/extension/parent, transform filename, etc)
 * Path navigation (join, resolve, relativeTo, descendsFrom, etc)
-* Async filesystem operations (exists, isFile, isDirectory, stat, read, write, makeDirectory, readdir, glob, etc)
+* Async filesystem operations (exists, isFile, isDirectory, stat, read, write, makeDirectory, readDirectory, glob, etc)
 * Temporary directory & file management
 
 Together, these features give you a safer, more expressive way to work with
@@ -129,7 +129,7 @@ await file.stat()         // fs.Stats object
 
 // --- Directory operations...
 await dir.join('sub').makeDirectory()
-const files = await dir.readdir()          // [FsPath, ...]
+const files = await dir.readDirectory()    // [FsPath, ...]
 const txts  = await dir.glob('**/*.log')   // glob within a directory
 ```
 
