@@ -600,11 +600,11 @@ export class FsPath extends AbsolutePath {
   /**
    * Cancels disposal for this path.   
    *
-   * Returns a new instance of this path, unmarked as disposable.
+   * @returns A new instance of this path, unmarked as disposable.
    *
-   * ⚠️ The old instance remains valid and can still be used for path and
-   * file operations.  Technically the old instance continues to to be
-   * marked as disposable, but the disposal will be a no-op.
+   * ⚠️ The old instance remains valid and can still be used normally.
+   * Technically the old instance continues to to be marked as disposable,
+   * but the disposal will now be a no-op.
    *
    *
    * @example
@@ -698,6 +698,7 @@ export class FsPath extends AbsolutePath {
   // --- Disposal support ---
   //
   
+  /** @hidden */
   [Symbol.dispose]!: () => void
 
   static #disposableRefs       = new Set<WeakRef<FsPath>>()
