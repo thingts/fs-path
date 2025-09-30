@@ -43,11 +43,19 @@ Under the hood, this package uses:
 filesystem paths.  All classes are immutable; any path manipulation
 operation returns a new instance.
 
-Most commonly, you'll likely only use `FsPath`, but the full set of classes exposed by the package are:
+This package defines:
 
-* `FsPath` - Absolute path, with path manipulation and filesystem operations (extends [AbsolutePath](https://thingts.github.io/path/classes/AbsolutePath.html) from [`@thingts/path`](https://github.com/thingts/path))
-* `RelativePath` - Relative path with path manipulation.  (Re-exported for convenience from [`@thingts/path`](https://github.com/thingts/path))
-* `Filename` - Immutable filename with file part manipulation.  (Re-exported for convenience from [`@thingts/path`](https://github.com/thingts/path))
+* `FsPath` - An absolute filesystem path object, with path manipulation and
+  filesystem operations.  `FsPath` extends
+  [`AbsolutePath`](https://thingts.github.io/path/classes/AbsolutePath.html)
+  from [`@thingts/path`](https://github.com/thingts/path) which provides
+  path manipulation, and adds the filesystem operations.
+
+For convenience this package also re-exports these two classes from
+[`@thingts/path`](https://github.com/thingts/path):
+
+* [`RelativePath`](https://thingts.github.io/path/classes/RelativePath.html) - Relative path object with path manipulation.
+* [`Filename`](https://thingts.github.io/path/classes/Filename.html) - Filename object with file part manipulation.
 
 The classes work together to maintain type safety and ergonomics.  For
 example, the `.relativeTo()` method of `FsPath` returns a `RelativePath`
@@ -96,7 +104,7 @@ a.parent                  // FsPath: '/bar'
 const b = a.replaceStem('report')         // FsPath: '/bar/report.txt'
 const c = b.replaceExtension('.md')       // FsPath: '/bar/report.md'
 const d = c.replaceParent('/other')       // FsPath: '/other/report.md'
-const e = d.transformFilename(fn => fn.toUpperCase()) // FsPath: '/other/REPORT.MD'
+const e = d.transformFilename(f => String(f).toUpperCase()) // FsPath: '/other/REPORT.MD'
 ```
 
 #### Navigation
