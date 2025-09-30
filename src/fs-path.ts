@@ -598,7 +598,7 @@ export class FsPath extends AbsolutePath {
   }
 
   /**
-   * Cancels disposal for this path.   
+   * Cancels disposal for this instance.   
    *
    * @returns A new instance of this path, unmarked as disposable.
    *
