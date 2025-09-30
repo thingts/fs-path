@@ -598,6 +598,26 @@ describe('FsPath', () => {
       })
       expect(await file.exists()).toBe(false)
     })
+
+    it('throws an error for using declaration without disposable()', async () => {
+      const file = await root.join('file.txt').touch()
+      await expect(async () => {
+        using useFile = new FsPath(file)
+        expect(await useFile.exists()).toBe(true)
+      }).rejects.toThrow('Object not disposable')
+      expect(await file.exists()).toBe(true) // file was not disposed
+    })
+
+    it('throws an error for using dedlaration after retain', async () => {
+      const file = await root.join('file.txt').touch()
+      file.disposable().retain()
+      await expect(async () => {
+        using useFile = new FsPath(file)
+        expect(await useFile.exists()).toBe(true)
+      }).rejects.toThrow('Object not disposable')
+      expect(await file.exists()).toBe(true) // file was not disposed
+    })
+
   })
 
 

@@ -159,7 +159,7 @@ export class FsPath extends AbsolutePath {
   /**
    * Creates a new temporary directory under the system temporary directory.
    *
-   * The directory is marked as {@link FsPath.disposable}().
+   * The directory is marked as {@link disposable}().
    */
   static async makeTempDirectory(opts?: { prefix?: string }): Promise<FsPath> {
     const { prefix = 'temp-' } = opts ?? {}
@@ -556,14 +556,16 @@ export class FsPath extends AbsolutePath {
   /////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Marks this path as disposable, meaning the file or directory will
-   * be automatically deleted when no longer needed.
+   * Create an {@link FsPath} instance marked as as disposable, meaning the
+   * file or directory will be automatically deleted when no longer needed.
    *
-   * Disposable paths will be disposed of in one of three circumstances,
-   * whichever comes first:
+   * Disposable paths will be disposed (i.e. the file or directory will be
+   * deleted) in one of three circumstances, whichever comes first:
    *
-   * * Via `using` -- The path is deleted as soon as FsPath object goes out
-   *   of scope.  This is the most immediate and reliable.
+   * * Via [the `using`
+   *   declaration](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/using)
+   *   -- the path is disposed as soon as the declared variable goes out of scope.
+   *   This is the most immediate and reliable.
    *
    * * Disposal when the {@link FsPath} object is garbage collected. As always,
    *   there's no knowing when or if this will happen.
@@ -571,7 +573,7 @@ export class FsPath extends AbsolutePath {
    * * Disposal on process exit. 
    *
    * ⚠️  Disposal is best-effort; it may fail due to permissions or be
-   * skipped if the process exits abnomrally.  Failures during disposal are
+   * skipped if the process exits abnormally.  Failures during disposal are
    * silently ignored.
    *
    * @example
@@ -586,18 +588,24 @@ export class FsPath extends AbsolutePath {
    * // The file will be removed eventually, on gc or process exit
    * ```
    *
-   * @returns This instance, for chaining.
+   * @returns A new instance of this path, marked as disposable.
    */
   disposable(): this {
-    const path = this.toString()
-    Self.#initOnExitHandler()
-    Self.#disposablePaths.add(path)
-    Self.#finalizationRegistry.register(this, path)
-    return this
+    const clone = this.newSelf(this)
+    clone.#registerDisposable()
+    clone[Symbol.dispose] = clone.disposeInstance // eslint-disable-line @typescript-eslint/unbound-method
+    return clone
   }
 
   /**
-   * Cancels automatic disposal for this path.   
+   * Cancels disposal for this path.   
+   *
+   * Returns a new instance of this path, unmarked as disposable.
+   *
+   * ⚠️ The old instance remains valid and can still be used for path and
+   * file operations.  Technically the old instance continues to to be
+   * marked as disposable, but the disposal will be a no-op.
+   *
    *
    * @example
    * ```ts
@@ -605,26 +613,18 @@ export class FsPath extends AbsolutePath {
    *   using p = new FsPath('/path/to/tempfile.txt').disposable()
    *   await p.write('data') // Creates the file
    *   ...
-   *   p.retain() // The file will not be removed when p goes out of scope
+   *   p.retain() // The file will *not* be removed when p goes out of scope
    * }
+   *
+   * const p2 = new FsPath('/path/to/tempfile2.txt').disposable()
+   * p2.retain() // the file will *not* be automatically removed
    * ```
    *
-   * @returns This instance, for chaining.
+   * @returns A new instance of this path, not marked as disposable.
    */
   retain(): this {
-    const path = this.toString()
-    Self.#disposablePaths.delete(path)
-    Self.#finalizationRegistry.unregister(this)
-    return this
-  }
-
-  /** @hidden */
-  [Symbol.dispose](): void {
-    if (Self.#disposablePaths.has(this.path_)) {
-      Self.#dispose(this.path_)
-      Self.#disposablePaths.delete(this.path_)
-      Self.#finalizationRegistry.unregister(this)
-    }
+    this.#unregisterDisposable()
+    return this.newSelf(this)
   }
 
 
@@ -681,7 +681,7 @@ export class FsPath extends AbsolutePath {
   //
 
   static #buildMode(spec: FsPermissionSpec): number {
-    const toOctalDigit = (flags: FsPermissionFlags = {}): number =>                 { return (flags.read ? 4 : 0) | (flags.write ? 2 : 0) | (flags.execute ? 1 : 0) }
+    const toOctalDigit = (flags: FsPermissionFlags = {}): number =>               { return (flags.read ? 4 : 0) | (flags.write ? 2 : 0) | (flags.execute ? 1 : 0) }
     const combineModes = (user: number, group: number, others: number): number => { return (user << 6) | (group << 3) | others }
 
     if ('mode' in spec) {
@@ -698,21 +698,57 @@ export class FsPath extends AbsolutePath {
   // --- Disposal support ---
   //
   
-  static #disposablePaths      = new Set<string>()
-  static #onExitRegistered     = false
-  static #finalizationRegistry = new FinalizationRegistry((path: string) => { Self.#dispose(path) })
+  [Symbol.dispose]!: () => void
 
-  static #dispose(path: string): void {
-    rmSync(path, { recursive: true, force: true })
+  static #disposableRefs       = new Set<WeakRef<FsPath>>()
+  static #onExitRegistered     = false
+  static #finalizationRegistry = new FinalizationRegistry((path: string) => { Self.#rmPath(path) })
+
+  #registerDisposable(): void {
+    Self.#initOnExitHandler()
+    Self.#disposableRefs.add(new WeakRef(this))
+    Self.#finalizationRegistry.register(this, this.toString())
+  }
+
+  #unregisterDisposable(): void {
+    const ref = this.#findDisposableRef()
+    if (ref) { Self.#disposableRefs.delete(ref) }
+    Self.#finalizationRegistry.unregister(this)
+  }
+
+  #findDisposableRef(): WeakRef<FsPath> | undefined {
+    for (const ref of Self.#disposableRefs) {
+      const obj = ref.deref()
+      if (obj === undefined) { Self.#disposableRefs.delete(ref) } // clean up dead refs
+      if (obj === this) {
+        return ref
+      }
+    }
+    return undefined
+  }
+
+  private disposeInstance(): void {
+    const ref = this.#findDisposableRef()
+    if (ref) {
+      Self.#rmPath(this.toString())
+      this.#unregisterDisposable()
+    }
+  }
+
+  static #rmPath(path: string): void {
+    try {
+      rmSync(path, { recursive: true, force: true })
+    } catch {
+      // ignore errors during disposal
+    }
   }
 
   static #initOnExitHandler(): void {
     if (!Self.#onExitRegistered) {
-      process.on('exit', () => Self.#disposablePaths.forEach(path => Self.#dispose(path)))
+      process.on('exit', () => Self.#disposableRefs.forEach(ref => ref.deref()?.disposeInstance()))
       Self.#onExitRegistered = true
     }
   }
-
 
 }
 const Self = FsPath
