@@ -585,6 +585,7 @@ export class FsPath extends AbsolutePath {
    * } // The file is automatically removed when p goes out of scope
    *
    * const p2 = new FsPath('/path/to/tempfile2.txt').disposable()
+   * await p2.write('data')
    * // The file will be removed eventually, on gc or process exit
    * ```
    *
@@ -600,11 +601,15 @@ export class FsPath extends AbsolutePath {
   /**
    * Cancels disposal for this instance.   
    *
+   * If this instance was created via {@link disposable}(), so that file or
+   * directory would be automatically removed, calling `retain()` prevents
+   * that removal.
+   *
    * @returns A new instance of this path, unmarked as disposable.
    *
    * ⚠️ The old instance remains valid and can still be used normally.
    * Technically the old instance continues to to be marked as disposable,
-   * but the disposal will now be a no-op.
+   * but its disposal will now be a no-op.
    *
    *
    * @example
@@ -617,6 +622,7 @@ export class FsPath extends AbsolutePath {
    * }
    *
    * const p2 = new FsPath('/path/to/tempfile2.txt').disposable()
+   * await p2.write('data')
    * p2.retain() // the file will *not* be automatically removed
    * ```
    *
