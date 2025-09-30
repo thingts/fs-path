@@ -45,8 +45,9 @@ operation returns a new instance.
 
 This package defines:
 
-* `FsPath` - An absolute filesystem path object, with path manipulation and
-  filesystem operations.  `FsPath` extends
+* [`FsPath`](https://thingts.github.io/fs-path/classes/FsPath.html) - An
+  absolute filesystem path object, with path manipulation and filesystem
+  operations.  `FsPath` extends
   [`AbsolutePath`](https://thingts.github.io/path/classes/AbsolutePath.html)
   from [`@thingts/path`](https://github.com/thingts/path) which provides
   path manipulation, and adds the filesystem operations.

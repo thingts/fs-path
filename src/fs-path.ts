@@ -84,14 +84,14 @@ export type FsReaddirOptions = FsReadDirectoryOptions
  * [`@thingts/path`](https://github.com/thingts/path), but with added methods
  * for filesystem access.
  *
- * Having a {@link FsPath} does not imply that a file or directory exists at
+ * Having an {@link FsPath} does not imply that a file or directory exists at
  * that path in the filesystem; use {@link exists}, {@link isFile}, {@link
  * isDirectory} or {@link stat} to check for existence, and use {@link
  * write}, {@link touch}, {@link makeDirectory}, or {@link makeTempDirectory} to
  * create files or directories.
  *
  * Methods that create or modify files or directories return a `Promise<this>`,
- * allowing for chaining
+ * allowing for chaining.
  *
  * ⚠️  In the documentation below that is inherited from {@link AbsolutePath},
  * examples that refer to `AbsolutePath` apply equally to `FsPath` -- in
@@ -106,12 +106,12 @@ export type FsReaddirOptions = FsReadDirectoryOptions
  * const content = await p.read() // Reads the file content
  *
  * // With chaining
- * const p2 = await new FsPath('/path/to/another.txt').write('data', { makeParents: true })
+ * const p2 = await new FsPath('/path/to/another.txt').write('data')
  *
  * // Multiple chaining is possible, though less ergonomic
- * const p3 = await new FsPath('/path/to/yet-another.txt').write('data', { makeParents: true }).then(p => p.append('more data'))
+ * const p3 = await new FsPath('/path/to/yet-another.txt').write('data').then(p => p.setPermissions({ mode: 0o644 }))
  *
- * const p4 = await (await new FsPath('/path/to/yet-another.txt').write('data', { makeParents: true })).append('more data')
+ * const p4 = await (await new FsPath('/path/to/yet-another.txt').write('data')).setPermissions({ mode: 0o644 })
  * ```
  */
 export class FsPath extends AbsolutePath {
