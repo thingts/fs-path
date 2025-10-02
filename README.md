@@ -165,7 +165,7 @@ const file = new FsPath('/project/tempfile.txt').disposable()
 
 ## Related
 
-* [@thingts/path](https://github.com/thingts/path) – Path manipulation only (no fs), works in Node.js, Deno, and the browser.
+* [@thingts/path](https://github.com/thingts/path) – Path manipulation only (no fs), pure javascript, no node.js dependences (browser-safe)
 
 ## Contributing
 
