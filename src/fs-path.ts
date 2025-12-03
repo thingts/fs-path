@@ -136,10 +136,11 @@ export class FsPath extends AbsolutePath {
    * ```
    */
   constructor(path: string | FsPath | AbsolutePath | RelativePath | Filename) {
-    if (AbsolutePath.isAbsolutePathString(String(path))) {
-      super(path.toString())
+    const str = String(path)
+    if (Self.#isAbsolutePathString(String(path))) {
+      super(str)
     } else {
-      super(FsPath.cwd().join(path))
+      super(FsPath.cwd().join(str))
     }
   }
 
@@ -592,7 +593,7 @@ export class FsPath extends AbsolutePath {
    * @returns A new instance of this path, marked as disposable.
    */
   disposable(): this {
-    const clone = this.newSelf(this)
+    const clone = new FsPath(this) as this
     clone.#registerDisposable()
     clone[Symbol.dispose] = clone.disposeInstance // eslint-disable-line @typescript-eslint/unbound-method
     return clone
@@ -630,7 +631,7 @@ export class FsPath extends AbsolutePath {
    */
   retain(): this {
     this.#unregisterDisposable()
-    return this.newSelf(this)
+    return new FsPath(this) as this
   }
 
 
@@ -754,6 +755,18 @@ export class FsPath extends AbsolutePath {
     if (!Self.#onExitRegistered) {
       process.on('exit', () => Self.#disposableRefs.forEach(ref => ref.deref()?.disposeInstance()))
       Self.#onExitRegistered = true
+    }
+  }
+
+  static #isAbsolutePathString(path: string): boolean {
+    // Could just check if path starts with '/', but this way we leverage
+    // the existing validation in AbsolutePath.  (Which TBH just checks if
+    // the path starts with '/')
+    try {
+      new AbsolutePath(path)
+      return true
+    } catch {
+      return false
     }
   }
 
