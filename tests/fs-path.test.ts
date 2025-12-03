@@ -562,7 +562,7 @@ describe('FsPath', () => {
 
     it('disposes on gc', async () => {
       if (!global.gc) {
-        expect('gc() is not available. set config poolOptions.forks.execArgv === ["--expose-gc"]').toBe(false)
+        expect('gc() is not available. set config execArgv === ["--expose-gc"]').toBe(false)
       }
 
       const file = await root.join('file.txt').touch()
