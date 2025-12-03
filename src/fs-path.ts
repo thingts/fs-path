@@ -6,7 +6,7 @@ import { promises as fs, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 
 /**
- * Options for filtering paths, used by {@link FsPath.readDirectory} and {@link FsPath.glob}
+ * Options for filtering paths, used by {@link FsPath.readDirectory | `readDirectory()`} and {@link FsPath.glob | `glob()`}.
  */
 interface FsPathFilterOptions {
   /** If true, only include files in the result. (Default: false) */
@@ -56,8 +56,8 @@ export type FsPermissionSpec = {
 }
 
 /**
- * Options for reading directories, used by {@link FsPath.readDirectory} and
- * {@link FsPath.glob}
+ * Options for reading directories, used by {@link FsPath.readDirectory | `readDirectory()`} and
+ * {@link FsPath.glob | `glob()`}.
  */
 export interface FsReadDirectoryOptions extends FsPathFilterOptions {
   /**
@@ -84,18 +84,20 @@ export type FsReaddirOptions = FsReadDirectoryOptions
  * [`@thingts/path`](https://github.com/thingts/path), but with added methods
  * for filesystem access.
  *
- * Having an {@link FsPath} does not imply that a file or directory exists at
- * that path in the filesystem; use {@link exists}, {@link isFile}, {@link
- * isDirectory} or {@link stat} to check for existence, and use {@link
- * write}, {@link touch}, {@link makeDirectory}, or {@link makeTempDirectory} to
- * create files or directories.
+ * Having an {@link FsPath} instance does not imply that a file or directory
+ * exists at that path in the filesystem; use {@link exists | `exists()`}, {@link isFile | `isFile()`},
+ * {@link isDirectory | `isDirectory()`} or {@link stat | `stat()`} to check for existence,
+ * and use {@link write | `write()`}, {@link touch | `touch()`}, {@link makeDirectory | `makeDirectory()`},
+ * or {@link makeTempDirectory | `makeTempDirectory()`} to create files or directories.
  *
  * Methods that create or modify files or directories return a `Promise<this>`,
  * allowing for chaining.
  *
+ * FsPath also supports creating temporary files or directories; see {@link disposable | `disposable()`}
+ *
  * ⚠️  In the documentation below that is inherited from {@link AbsolutePath},
  * examples that refer to `AbsolutePath` apply equally to `FsPath` -- in
- * particular, the path manipulation methods like {@link join} return
+ * particular, the path manipulation methods like {@link join | `join()`} return
  * `FsPath` instances, not `AbsolutePath` instances.
  *
  *
@@ -113,20 +115,25 @@ export type FsReaddirOptions = FsReadDirectoryOptions
  *
  * const p4 = await (await new FsPath('/path/to/yet-another.txt').write('data')).setPermissions({ mode: 0o644 })
  * ```
+ *
+ * @property resolve See [`AbsolutePath.resolve`](https://thingts.github.io/path/classes/AbsolutePath.html#resolve)
+ * @property replaceStem See [`AbsolutePath.replaceStem`](https://thingts.github.io/path/classes/AbsolutePath.html#replaceStem)
+ * @property replaceExtension See [`AbsolutePath.replaceExtension`](https://thingts.github.io/path/classes/AbsolutePath.html#replaceExtension)
+ *
  */
 export class FsPath extends AbsolutePath {
 
   /**
-   * Creates a new {@link FsPath} 
+   * Creates a new {@link FsPath} instance
    *
    * If given a relative path, it is resolved against the current working
    * directory. The path is always normalized.
    *
    * Creating an {@link FsPath} instance does not imply that the path
-   * exists on the filesystem; use {@link exists}, {@link isFile}, {@link
-   * isDirectory} or {@link stat} to check for existence, and use {@link
-   * write}, {@link touch}, {@link makeDirectory}, or {@link makeTempDirectory} to
-   * create files or directories.
+   * exists on the filesystem; use {@link exists | `exists()`}, {@link isFile | `isFile()`},
+   * {@link isDirectory | `isDirectory()`} or {@link stat | `stat()`} to check for existence,
+   * and use {@link write | `write()`}, {@link touch | `touch()`}, {@link makeDirectory | `makeDirectory()`},
+   * or {@link makeTempDirectory | `makeTempDirectory()`} to create files or directories.
    *
    * @example
    * ```ts
@@ -160,7 +167,9 @@ export class FsPath extends AbsolutePath {
   /**
    * Creates a new temporary directory under the system temporary directory.
    *
-   * The directory is marked as {@link disposable}().
+   * The directory is marked as {@link disposable}.
+   *
+   * @see {@link disposable | `disposable()`}
    */
   static async makeTempDirectory(opts?: { prefix?: string }): Promise<FsPath> {
     const { prefix = 'temp-' } = opts ?? {}
@@ -591,6 +600,8 @@ export class FsPath extends AbsolutePath {
    * ```
    *
    * @returns A new instance of this path, marked as disposable.
+   *
+   * @see {@link retain | `retain()`}
    */
   disposable(): this {
     const clone = new FsPath(this) as this
@@ -602,9 +613,9 @@ export class FsPath extends AbsolutePath {
   /**
    * Cancels disposal for this instance.   
    *
-   * If this instance was created via {@link disposable}(), so that file or
-   * directory would be automatically removed, calling `retain()` prevents
-   * that removal.
+   * If this instance was created via {@link disposable | `disposable()`}, so
+   * that file or directory would be automatically removed, calling `retain()`
+   * prevents that removal.
    *
    * @returns A new instance of this path, unmarked as disposable.
    *
@@ -628,6 +639,8 @@ export class FsPath extends AbsolutePath {
    * ```
    *
    * @returns A new instance of this path, not marked as disposable.
+   *
+   * @see {@link disposable | `disposable()`}
    */
   retain(): this {
     this.#unregisterDisposable()
