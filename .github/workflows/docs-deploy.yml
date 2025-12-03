@@ -1,7 +1,9 @@
-name: docs
+name: docs-deploy
+
 on:
   push:
-    branches: [ main ]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -10,8 +12,9 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,20 +25,12 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: npm run docs    # should output HTML into ./docs
+      - run: npx typedoc --gitRevision "$GITHUB_REF_NAME"
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs
+          path: ./build/docs
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/deploy-pages@v4

@@ -1,28 +1,40 @@
 {
-  "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src/index.ts"],
-  "exclude": ["**/*.test.ts", "**/__tests__/**"],
-  "excludeInternal": true,
-  "excludeNotDocumented": true,
-  "excludeNotDocumentedKinds": ["Class", "Module"],
-  "excludePrivate": true,
-  "externalSymbolLinkMappings": {
-    "@thingts/path": { "AbsolutePath": "https://thingts.github.io/path/classes/AbsolutePath.html" }
-  },
-  "includeHierarchySummary": false,
-  "includeVersion": true,
-  "name": "@thingts/fs-path",
-  "navigationLinks": {
-    "github.com/thingts/fs-path": "https://github.com/thingts/fs-path"
-  },
-  "out": "docs",
-  "plugin": ["typedoc-github-theme"],
-  "readme": "typedoc/readme.md",
-  "theme": "typedoc-github-theme",
-  "tsconfig": "tsconfig.json",
-  "visibilityFilters": {
-        "protected": false,
-        "inherited": true,
-        "external": true
+  "$schema" : "https://typedoc.org/schema.json",
+  "entryPoints" : [
+    "src/index.ts"
+  ],
+  "exclude" : [
+    "**/*.test.ts",
+    "**/__tests__/**"
+  ],
+  "excludeInternal" : true,
+  "excludeNotDocumented" : true,
+  "excludeNotDocumentedKinds" : [
+    "Class",
+    "Module"
+  ],
+  "excludePrivate" : true,
+  "externalSymbolLinkMappings" : {
+    "@thingts/path" : {
+      "AbsolutePath" : "https://thingts.github.io/path/classes/AbsolutePath.html"
     }
+  },
+  "includeHierarchySummary" : false,
+  "includeVersion" : true,
+  "name" : "@thingts/fs-path",
+  "navigationLinks" : {
+    "github.com/thingts/fs-path" : "https://github.com/thingts/fs-path"
+  },
+  "out" : "build/docs",
+  "plugin" : [
+    "typedoc-github-theme"
+  ],
+  "readme" : "typedoc/readme.md",
+  "theme" : "typedoc-github-theme",
+  "tsconfig" : "tsconfig.json",
+  "visibilityFilters" : {
+    "external" : true,
+    "inherited" : true,
+    "protected" : false
+  }
 }
