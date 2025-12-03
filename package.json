@@ -54,7 +54,7 @@
   "scripts": {
     "build": "tsup src/index.ts --dts --format esm,cjs",
     "docs": "typedoc",
-    "lint": "tsc --build --noEmit ; eslint .",
+    "lint": "tsc --build --noEmit ; eslint ; knip",
     "test": "vitest run"
   },
   "devDependencies": {
