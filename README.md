@@ -87,35 +87,35 @@ import { FsPath } from '@thingts/fs-path'
 
 ```typescript
 const a = new FsPath('/foo/../bar/file.txt')
-a.equals('/bar/file.txt') // true
+a.equals('/bar/file.txt') // → true
 
 const b = new FsPath('relative/to/cwd.txt')
-b.equals(FsPath.cwd().join('relative/to/cwd.txt')) // true
+b.equals(FsPath.cwd().join('relative/to/cwd.txt')) // → true
 ```
 
 #### Path parts & transforms
 
 ```typescript
 const a = new FsPath('/bar/file.txt')
-a.filename                // Filename: 'file.txt'
-a.filename.toString()     // string: 'file.txt'
-a.stem                    // string: 'file'
-a.extension               // string: '.txt'
-a.parent                  // FsPath: '/bar'
-const b = a.replaceStem('report')         // FsPath: '/bar/report.txt'
-const c = b.replaceExtension('.md')       // FsPath: '/bar/report.md'
-const d = c.replaceParent('/other')       // FsPath: '/other/report.md'
-const e = d.transformFilename(f => String(f).toUpperCase()) // FsPath: '/other/REPORT.MD'
+a.filename                // → Filename('file.txt')
+a.filename.toString()     // → 'file.txt'
+a.stem                    // → 'file'
+a.extension               // → '.txt'
+a.parent                  // → FsPath('/bar')
+const b = a.replaceStem('report')         // → FsPath('/bar/report.txt')
+const c = b.replaceExtension('.md')       // → FsPath('/bar/report.md')
+const d = c.replaceParent('/other')       // → FsPath('/other/report.md')
+const e = d.transformFilename(f => String(f).toUpperCase()) // → FsPath('/other/REPORT.MD')
 ```
 
 #### Navigation
 
 ```typescript
 const base = new FsPath('/projects/demo')
-base.join('src/index.ts')               // FsPath: '/projects/demo/src/index.ts'
-base.descendsFrom('/projects')          // true
-base.parent.equals('/projects')         // true
-const rel = base.join('src/main.ts').relativeTo(base) // RelativePath: 'src/main.ts'
+base.join('src/index.ts')               // → FsPath('/projects/demo/src/index.ts')
+base.descendsFrom('/projects')          // → true
+base.parent.equals('/projects')         // → true
+const rel = base.join('src/main.ts').relativeTo(base) // → RelativePath('src/main.ts')
 ```
 
 #### Filesystem operations
@@ -127,19 +127,19 @@ const file = dir.join('logs/app.log')
 // --- Writing and reading ---
 await file.write('start\n', { makeParents: true })
 await file.write('listening\n', { append: true })
-await file.read()       // string: 'start\nlistening\n'
+await file.read()       // → 'start\nlistening\n'
 
 // --- File info ---
-await file.exists()       // true
-await file.isFile()       // true
-await file.isDirectory()  // false
-await file.parent.isDirectory() // true
-await file.stat()         // fs.Stats object
+await file.exists()       // → true
+await file.isFile()       // → true
+await file.isDirectory()  // → false
+await file.parent.isDirectory() // → true
+await file.stat()         // → fs.Stats object
 
 // --- Directory operations...
 await dir.join('sub').makeDirectory()
-const files = await dir.readDirectory()    // [FsPath, ...]
-const txts  = await dir.glob('**/*.log')   // glob within a directory
+const files = await dir.readDirectory()    // → [FsPath, ...]
+const txts  = await dir.glob('**/*.log')   // glob within a directory  → [FsPath, ...]
 ```
 
 #### Temporary (a.k.a. disposable) files and directories
@@ -147,10 +147,10 @@ const txts  = await dir.glob('**/*.log')   // glob within a directory
 ```typescript
 // --- Explicit resource management ---
 {
-    using dir  = await FsPath.makeTempDirectory() // returns disposable directory
+    using dir  = await FsPath.makeTempDirectory()                 // returns disposable directory
     using file = new FsPath('/project/tempfile.txt').disposable() // register for disposal
 
-    dir.exists() // true
+    dir.exists()       // → true
     file.write('data') // create file
 
     ...
