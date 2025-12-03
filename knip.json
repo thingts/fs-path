@@ -1,3 +1,4 @@
 {
-  "ignore": ["typedoc.json"]
+  "ignore": ["typedoc.json"],
+  "ignoreDependencies": ["tsx"]
 }
