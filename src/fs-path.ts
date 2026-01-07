@@ -1,4 +1,4 @@
-import fg from 'fast-glob'
+import { glob } from 'tinyglobby'
 import type { Filename, RelativePath } from '@thingts/path'
 import type { ReadStream, Stats } from 'node:fs'
 import { AbsolutePath } from '@thingts/path'
@@ -517,7 +517,7 @@ export class FsPath extends AbsolutePath {
   /**
    * Finds files and directories matching a glob pattern within this directory.
    *
-   * Uses [fast-glob](https://www.npmjs.com/package/fast-glob) under the hood.
+   * Uses [tinyglobby](https://www.npmjs.com/package/tinyglobby) under the hood.
    *
    * @param pattern - The glob pattern to match
    * @param opts.allowMissing - If true, return an empty array if the directory does not exist, rather than throwing an error. (Default: false)
@@ -549,12 +549,13 @@ export class FsPath extends AbsolutePath {
       }
       throw err
     }
-    const results = await fg(String(pattern), {
-      cwd:      this.path_,
-      absolute: true,
-      dot:      includeDotfiles,
-      onlyDirectories: onlyDirs,
-      onlyFiles:       onlyFiles,
+    const results = await glob(String(pattern), {
+      cwd:               this.path_,
+      absolute:          true,
+      dot:               includeDotfiles,
+      onlyDirectories:   onlyDirs,
+      onlyFiles:         onlyFiles,
+      expandDirectories: false
     })
     return results.map(p => new FsPath(p))
   }

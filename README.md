@@ -34,7 +34,7 @@ Under the hood, this package uses:
 
 * [`@thingts/path`](https://github.com/thingts/path) for path manipulation
 * [`node:fs/promises`](https://nodejs.org/api/fs/promises.html) for async filesystem operations
-* [`fast-glob`](https://www.npmjs.com/package/fast-glob) for globbing
+* [`tinyglobby`](https://www.npmjs.com/package/tinyglobby) for globbing
 
 
 ## Overview
