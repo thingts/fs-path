@@ -140,6 +140,12 @@ await file.stat()         // → fs.Stats object
 await dir.join('sub').makeDirectory()
 const files = await dir.readDirectory()    // → [FsPath, ...]
 const txts  = await dir.glob('**/*.log')   // glob within a directory  → [FsPath, ...]
+
+// --- Copying files and directories ---
+await file.copyTo('/projects/backup/app.log', { makeParents: true }) // copy file
+await file.copyTo('/projects/backup', { intoDir: true })             // copy into a directory
+await dir.copyTo('/projects/backup/demo', { recursive: true })       // copy a directory recursively
+await file.copyTo('/projects/backup/app.log', { overwrite: false })  // throws if destination exists
 ```
 
 #### Temporary (a.k.a. disposable) files and directories
@@ -147,8 +153,8 @@ const txts  = await dir.glob('**/*.log')   // glob within a directory  → [FsPa
 ```typescript
 // --- Explicit resource management ---
 {
-    using dir  = await FsPath.makeTempDirectory()                 // returns disposable directory
-    using file = new FsPath('/project/tempfile.txt').disposable() // register for disposal
+    using dir  = await FsPath.makeTempDirectory()                  // returns disposable directory
+    using file = new FsPath('/projects/tempfile.txt').disposable() // register for disposal
 
     dir.exists()       // → true
     file.write('data') // create file
@@ -160,7 +166,7 @@ const txts  = await dir.glob('**/*.log')   // glob within a directory  → [FsPa
 
 // --- Removed eventually, on gc or exit ---
 const dir  = await FsPath.makeTempDirectory() 
-const file = new FsPath('/project/tempfile.txt').disposable()
+const file = new FsPath('/projects/tempfile.txt').disposable()
 ```
 
 ## Related

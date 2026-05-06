@@ -448,30 +448,72 @@ export class FsPath extends AbsolutePath {
   
   
   /**
-   * Copies this file to a new location.
+   * Copies this file or directory to a new location.
+   *
+   * By default:
+   * - Files are copied and will overwrite an existing file at the destination.
+   * - Directories require `recursive: true`; otherwise an error is thrown.
+   * - When copying directories recursively:
+   *   - If the destination does not exist, it is created.
+   *   - If the destination exists, contents are merged.
+   *   - Existing files are overwritten unless `overwrite: false` is specified.
+   *
    * @param to - The target path to copy to.
-   * @param opts.intoDir - If true, treat `to` as a directory and copy the file into it. (Default: false)
-   * @param opts.makeParents - If true, create parent directories of the target path as needed. (Default: false)
+   * @param opts.intoDir - If true, treat `to` as a directory and copy this path into it
+   *   (i.e. `to.join(this.filename)`). (Default: false)
+   * @param opts.makeParents - If true, create parent directories of the target path as needed.
+   *   (Default: false)
+   * @param opts.recursive - If true, allow copying directories recursively.
+   *   Required when the source is a directory. (Default: false)
+   * @param opts.overwrite - If false, do not overwrite existing files; instead throw an error
+   *   if a destination path already exists. (Default: true)
    *
    * @example
    * ```ts
-   * const p1 = new FsPath('/path/to/file.txt')
-   * const p2 = new FsPath('/new/path/to/file.txt')
-   * await p1.copyTo(p2, { makeParents: true }) // Copies the file, creating parent directories as needed
-   * 
+   * const src = new FsPath('/path/to/file.txt')
+   * const dest = new FsPath('/new/path/to/file.txt')
+   *
+   * await src.copyTo(dest) // overwrites dest if it exists
+   *
    * const dir = new FsPath('/new/path/')
-   * const p3 = await p1.copyTo(dir, { intoDir: true, makeParents: true }) // Copies the file into the directory
-   * console.log(p3.toString()) // /new/path/file.txt
+   * await src.copyTo(dir, { intoDir: true }) // copies to /new/path/file.txt
+   *
+   * const srcDir = new FsPath('/path/to/dir')
+   * await srcDir.copyTo('/backup/dir', { recursive: true }) // copies entire directory tree
+   *
+   * await src.copyTo(dest, { overwrite: false }) // throws if dest exists
    * ```
    *
-   * @returns A Promise resolving to a new {@link FsPath} for the path of the copy (either `to` or `to.join(this.filename)` based on `opts.intoDir`)
+   * @returns A Promise resolving to a new {@link FsPath} for the path of the copy
+   *   (either `to` or `to.join(this.filename)` based on `opts.intoDir`)
    */
-  async copyTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean }): Promise<FsPath> {
-    const { intoDir = false, makeParents = false } = opts ?? {}
+  async copyTo(
+    to: AbsolutePath,
+    opts?: {
+      intoDir?: boolean
+      makeParents?: boolean
+      recursive?: boolean
+      overwrite?: boolean
+    }
+  ): Promise<FsPath> {
+    const {
+      intoDir = false,
+        makeParents = false,
+        recursive = false,
+        overwrite = true
+    } = opts ?? {}
+
     const target      = new FsPath(to)
     const destination = intoDir ? target.join(this.filename) : target
+
     await destination.#makeParents(makeParents)
-    await fs.copyFile(this.path_, destination.path_)
+
+    await fs.cp(this.path_, destination.path_, {
+      recursive,
+      force: overwrite,
+      errorOnExist: !overwrite
+    })
+
     return destination
   }
 

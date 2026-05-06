@@ -393,6 +393,108 @@ describe('FsPath', () => {
 
         expect(await target.read()).toBe(content)
       })
+
+      it('throws when copying a directory without recursive: true', async () => {
+        const sourceDir = await root.join('source-dir').makeDirectory()
+        await sourceDir.join('file.txt').write(content)
+
+        const targetDir = root.join('target-dir')
+
+        await expect(() => sourceDir.copyTo(targetDir)).rejects.toThrow()
+        expect(await targetDir.exists()).toBe(false)
+      })
+
+      it('copies a directory recursively when recursive: true', async () => {
+        const sourceDir = await root.join('source-dir').makeDirectory()
+        await sourceDir.join('file.txt').write(content)
+        await sourceDir.join('nested/file.txt').write('nested content', { makeParents: true })
+
+        const targetDir = root.join('target-dir')
+
+        const copied = await sourceDir.copyTo(targetDir, { recursive: true })
+
+        expect(await targetDir.isDirectory()).toBe(true)
+        expect(await targetDir.join('file.txt').read()).toBe(content)
+        expect(await targetDir.join('nested/file.txt').read()).toBe('nested content')
+        expect(copied.equals(targetDir)).toBe(true)
+      })
+
+      it('copies a directory recursively into an existing directory', async () => {
+        const sourceDir = await root.join('source-dir').makeDirectory()
+        await sourceDir.join('file.txt').write(content)
+
+        const targetParent = await root.join('target-parent').makeDirectory()
+
+        const copied = await sourceDir.copyTo(targetParent, {
+          intoDir: true,
+          recursive: true
+        })
+
+        const targetDir = targetParent.join('source-dir')
+        expect(await targetDir.join('file.txt').read()).toBe(content)
+        expect(copied.equals(targetDir)).toBe(true)
+      })
+
+      it('copies a directory recursively with makeParents: true', async () => {
+        const sourceDir = await root.join('source-dir').makeDirectory()
+        await sourceDir.join('file.txt').write(content)
+
+        const targetDir = root.join('missing/parent/target-dir')
+
+        await sourceDir.copyTo(targetDir, {
+          recursive: true,
+          makeParents: true
+        })
+
+        expect(await targetDir.join('file.txt').read()).toBe(content)
+      })
+
+      it('overwrites an existing file by default', async () => {
+        const source = await root.join('source.txt').write('new')
+        const target = await root.join('target.txt').write('old')
+
+        await source.copyTo(target)
+
+        expect(await target.read()).toBe('new')
+      })
+
+      it('throws instead of overwriting when overwrite: false', async () => {
+        const source = await root.join('source.txt').write('new')
+        const target = await root.join('target.txt').write('old')
+
+        await expect(() => source.copyTo(target, { overwrite: false })).rejects.toThrow()
+        expect(await target.read()).toBe('old')
+      })
+
+      it('merges and overwrites directory contents by default', async () => {
+        const source = await root.join('source').makeDirectory()
+        await source.join('a.txt').write('new a')
+        await source.join('b.txt').write('new b')
+
+        const target = await root.join('target').makeDirectory()
+        await target.join('a.txt').write('old a')
+        await target.join('c.txt').write('old c')
+
+        await source.copyTo(target, { recursive: true })
+
+        expect(await target.join('a.txt').read()).toBe('new a')
+        expect(await target.join('b.txt').read()).toBe('new b')
+        expect(await target.join('c.txt').read()).toBe('old c')
+      })
+
+      it('throws on directory content conflict when overwrite: false', async () => {
+        const source = await root.join('source').makeDirectory()
+        await source.join('a.txt').write('new a')
+
+        const target = await root.join('target').makeDirectory()
+        await target.join('a.txt').write('old a')
+
+        await expect(() =>
+                     source.copyTo(target, { recursive: true, overwrite: false })
+                    ).rejects.toThrow()
+
+                    expect(await target.join('a.txt').read()).toBe('old a')
+      })
     })
 
     describe('readDirectory()', () => {
