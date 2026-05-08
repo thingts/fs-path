@@ -171,9 +171,60 @@ export class FsPath extends AbsolutePath {
    *
    * @see {@link disposable | `disposable()`}
    */
-  static async makeTempDirectory(opts?: { prefix?: string }): Promise<FsPath> {
-    const { prefix = 'temp-' } = opts ?? {}
-    return new FsPath(await fs.mkdtemp(new FsPath(tmpdir()).join(prefix).toString())).disposable()
+
+  /**
+   * Creates a new temporary directory
+   *
+   * By default, the directory is created under the system temporary
+   * directory (see [`os.tmpdir`](https://nodejs.org/api/os.html#ostmpdir))
+   *
+   * The resulting directory name will begin with the given `prefix`
+   * (default: `'temp-'`) followed by a unique suffix, as per
+   * [`fs.mkdtemp`](https://nodejs.org/api/fs.html#fsmkdtempprefix-options-callback).
+   *
+   * The returned FsPath is marked as {@link disposable}, meaning it will be
+   * automatically removed when no longer needed (e.g. when used with a
+   * `using` declaration, on garbage collection, or on process exit).
+   *
+   * @param opts.prefix - Prefix for the generated directory name.  `(Default: `'temp-'`)
+   * @param opts.parent - The parent directory in which to create the
+   *   temporary directory. Defaults to the system temporary directory.
+   * @param opts.makeParents - If true, create the parent directory if it
+   *   does not exist. (Default: false)
+   *
+   * @example
+   * ```ts
+   * // Default: create under system temp directory
+   * const dir = await FsPath.makeTempDirectory()
+   *
+   * // With custom prefix
+   * const dir2 = await FsPath.makeTempDirectory({ prefix: 'build-' })
+   *
+   * // Under a custom parent directory
+   * const dir3 = await FsPath.makeTempDirectory({
+   *   parent: '/projects/demo/.tmp',
+   *   prefix: 'build-',
+   *   makeParents: true
+   * })
+   * ```
+   *
+   * @returns A Promise resolving to a new {@link FsPath} representing the
+   *   temporary directory, marked as {@link disposable}.
+   *
+   * @see {@link disposable | `disposable()`}
+   */
+  static async makeTempDirectory(opts?: {
+    parent?: string | FsPath | AbsolutePath
+    prefix?: string
+    makeParents?: boolean
+  }): Promise<FsPath> {
+    const { parent = tmpdir(), prefix = 'temp-', makeParents = false } = opts ?? {}
+
+    const base = new FsPath(parent)
+    if (makeParents) {
+      await base.makeDirectory({ makeParents: true })
+    }
+    return new FsPath(await fs.mkdtemp(base.join(prefix).toString())).disposable()
   }
 
 

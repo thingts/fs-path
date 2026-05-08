@@ -724,6 +724,11 @@ describe('FsPath', () => {
 
 
   describe('static methods', () => {
+    let root: FsPath
+
+    beforeEach(async () => {
+      root = await FsPath.makeTempDirectory()
+    })
 
     it('cwd() returns current persistence directory', () => {
       const cwd = FsPath.cwd()
@@ -744,6 +749,39 @@ describe('FsPath', () => {
         expect(String(dir.filename)).toMatch(/^mytest-/)
         expect(await dir.exists()).toBe(true)
       })
+
+      it('generates unique directories for same prefix', async () => {
+        const prefix = 'unique-'
+        const d1 = await FsPath.makeTempDirectory({ prefix })
+        const d2 = await FsPath.makeTempDirectory({ prefix })
+
+        expect(String(d1)).not.toBe(String(d2))
+      })
+
+      it('creates a temp directory under a custom directory', async () => {
+        const parent = await root.join('custom').makeDirectory()
+        const dir = await FsPath.makeTempDirectory({ parent })
+
+        expect(dir.descendsFrom(parent)).toBe(true)
+        expect(await dir.exists()).toBe(true)
+      })
+
+      it('creates parent directory when makeParents is true', async () => {
+        const parent = root.join('nested/custom')
+
+        const dir = await FsPath.makeTempDirectory({ parent, makeParents: true })
+
+        expect(await parent.exists()).toBe(true)
+        expect(dir.descendsFrom(parent)).toBe(true)
+        expect(await dir.exists()).toBe(true)
+      })
+
+      it('throws if parent directory does not exist and makeParents is false', async () => {
+        const parent = root.join('missing/custom')
+
+        await expect(() => FsPath.makeTempDirectory({ parent })).rejects.toThrow('ENOENT')
+      })
+
     })
 
   })
