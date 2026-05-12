@@ -134,6 +134,8 @@ await file.exists()       // → true
 await file.isFile()       // → true
 await file.isDirectory()  // → false
 await file.parent.isDirectory() // → true
+await file.access('read')             // → true
+await file.access(['read', 'write'])  // → true
 await file.stat()         // → fs.Stats object
 
 // --- Directory operations...

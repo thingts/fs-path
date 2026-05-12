@@ -2,7 +2,7 @@ import { glob } from 'tinyglobby'
 import type { Filename, RelativePath } from '@thingts/path'
 import type { ReadStream, Stats } from 'node:fs'
 import { AbsolutePath } from '@thingts/path'
-import { promises as fs, rmSync } from 'node:fs'
+import { constants, promises as fs, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 
 /**
@@ -31,6 +31,10 @@ export interface FsPermissionFlags {
   execute?: boolean
 }
 
+export type FsFileMode     = 'read' | 'write' | 'execute'
+export type FsFileModeSpec = FsFileMode | FsFileMode[] | FsPermissionFlags
+
+
 /**
  * Specification for setting file access permissions.
  *
@@ -45,14 +49,14 @@ export type FsPermissionSpec = {
   mode: number
 } | {
   /** Permissions for user */
-  user?:   FsPermissionFlags
+  user?:   FsFileModeSpec
   /** Permissions for user */
-  group?:  FsPermissionFlags
+  group?:  FsFileModeSpec
   /** Permissions for user */
-  others?: FsPermissionFlags
+  others?: FsFileModeSpec
 } | {
   /** Permissions for all (user, group and others) */
-  all:    FsPermissionFlags // shorthand for user + group + others
+  all:    FsFileModeSpec // shorthand for user + group + others
 }
 
 /**
@@ -301,10 +305,62 @@ export class FsPath extends AbsolutePath {
   }
 
   /**
+   * Checks the accessibility of the path with the specified mode(s).
+   *
+   * Note that a successful access check does not guarantee that a
+   * subsequent operation will succeed, since the filesystem state may
+   * change in between.
+   *
+   * @param modes - The access mode(s) to check.  Can be a {@link
+   * FsFileMode} string, an array of {@link FsFileMode} strings, or an
+   * {@link FsPermissionFlags} object specifying read/write/execute
+   * booleans.  An empty spec (`[]` or `{}`) checks for
+   * existence.
+   *
+   * @param opts.throw - If true, rethrows the underlying filesystem error
+   * if the path is not accessible with the specified mode(s). (Default: false)
+   *
+   * @returns A Promise resolving to true if the path is accessible with
+   * the specified mode(s), or false if it is not (and `opts.throw` is
+   * false).
+   *
+   * @example
+   * ```ts
+   * const p = new FsPath('/path/to/file')
+   * const canRead = await p.access('read')
+   * const canReadWrite = await p.access(['read', 'write'])
+   * const canExecute = await p.access({ execute: true })
+   * ```
+   */
+  async access(modes: FsFileModeSpec, opts?: { throw?: boolean }): Promise<boolean> {
+
+    const { throw: throwIfInaccessible = false } = opts ?? {}
+
+    const mode = Self.#accessMode(modes)
+    try { 
+      await fs.access(this.path_, mode)
+    } catch (err) {
+      if (throwIfInaccessible) {
+        throw err
+      }
+      return false
+    }
+    return true
+  }
+
+  /**
    * Sets the permission mode of the path.
    * 
-   * @param spec - The permission specification.  Can be the numeric mode, or an object specifying user/group/others permissions.
-   * @param opts.operation - The operation to perform: assign the permissions exactly (default), overlay the permissions on top of the existing ones, or clear the specified permissions from the existing ones.
+   * @param spec - The permission specification.  Can be the numeric mode,
+   * or an object specifying user/group/others permissions; each category
+   * can be specified with a {@link FsFileMode} string, an array of {@link
+   * FsFileMode} strings, or an {@link FsPermissionFlags} object specifying
+   * read/write/execute booleans.
+   *
+   * @param opts.operation - The operation to perform: assign the
+   * permissions exactly (default), overlay the permissions on top of the
+   * existing ones, or clear the specified permissions from the existing
+   * ones.
    *
    * @example
    * ```ts
@@ -314,7 +370,7 @@ export class FsPath extends AbsolutePath {
    * await p.setPermissions({ mode: 0o644 })
    *
    * // Add write permission for all => rw-rw-rw-
-   * await p.setPermissions({ all: { read: true, write: true } }, { operation: 'overlay' })
+   * await p.setPermissions({ all: ['read',  'write'] }, { operation: 'overlay' })
    *
    * // Remove write permission for others => rw-rw-r--
    * await p.setPermissions({ others: { write: true } }, { operation: 'clear' })
@@ -322,10 +378,10 @@ export class FsPath extends AbsolutePath {
    *
    * @returns A Promise resolving to this instance, for chaining.
    */
-  async setPermissions(spec: FsPermissionSpec, opts?: { operation: 'assign' | 'overlay' | 'clear' }) : Promise<this> {
+  async setPermissions(spec: FsPermissionSpec, opts?: { operation?: 'assign' | 'overlay' | 'clear' }) : Promise<this> {
     const { operation = 'assign' } = opts ?? {}
 
-    const mode = Self.#buildMode(spec)
+    const mode = Self.#buildPermissionMode(spec)
 
     const current = operation === 'assign' ? 0 : (await fs.stat(this.path_)).mode & 0o777
     const final =
@@ -791,20 +847,72 @@ export class FsPath extends AbsolutePath {
   }
 
   //
-  // --- Permission mode builder ---
+  // --- File mode builders ---
   //
 
-  static #buildMode(spec: FsPermissionSpec): number {
-    const toOctalDigit = (flags: FsPermissionFlags = {}): number =>               { return (flags.read ? 4 : 0) | (flags.write ? 2 : 0) | (flags.execute ? 1 : 0) }
-    const combineModes = (user: number, group: number, others: number): number => { return (user << 6) | (group << 3) | others }
+  static #buildPermissionMode(spec: FsPermissionSpec): number {
+    const combineModes = (user: number, group: number, others: number): number => (user << 6) | (group << 3) | others
 
     if ('mode' in spec) {
       return spec.mode
     } else if ('all' in spec) {
-      const mode = toOctalDigit(spec.all)
+      const mode = Self.#permissionMode(spec.all)
       return combineModes(mode, mode, mode)
     } else {
-      return combineModes(toOctalDigit(spec.user), toOctalDigit(spec.group), toOctalDigit(spec.others))
+      return combineModes(Self.#permissionMode(spec.user), Self.#permissionMode(spec.group), Self.#permissionMode(spec.others))
+    }
+  }
+
+  //
+  // Returns the octal representation of file permissions for a given
+  // FsFileModeSpec (e.g. 'read', ['read', 'write'], or { read: true,
+  // write: true })
+  // 
+  static #permissionMode(spec?: FsFileModeSpec): number {
+    const flags = Self.#normalizeModeSpec(spec)
+    return (flags.read ? 4 : 0) | (flags.write ? 2 : 0) | (flags.execute ? 1 : 0)
+  }
+
+  //
+  // Returns the binary representation of access permissions for a given
+  // FsFileModeSpec (e.g. 'read', ['read', 'write'], or { read: true,
+  // write: true })
+  static #accessMode(spec?: FsFileModeSpec): number {
+    const flags = Self.#normalizeModeSpec(spec)
+    let mode = 0
+    if (flags.read)    { mode |= constants.R_OK }
+    if (flags.write)   { mode |= constants.W_OK }
+    if (flags.execute) { mode |= constants.X_OK }
+    if (mode === 0) { mode = constants.F_OK }
+    return mode
+  }
+
+  //
+  // Normalizes a FsFileModeSpec (e.g. 'read', ['read', 'write'], or { read: true, write: true }) to FsPermissionFlags ({ read: true, write: true })
+  //
+  static #normalizeModeSpec(modes?: FsFileModeSpec): FsPermissionFlags {
+    const modesToFlags = (modes: readonly FsFileMode[]): FsPermissionFlags => {
+      const flags: FsPermissionFlags = {}
+      for (const mode of modes) {
+        if (mode === 'read') {
+          flags.read = true
+        } else if (mode === 'write') {
+          flags.write = true
+        } else if (mode === 'execute') { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+          flags.execute = true
+        }
+      }
+      return flags
+    }
+
+    if (modes === undefined) {
+      return {}
+    } else if (typeof modes === 'string') {
+      return modesToFlags([modes])
+    } else if (Array.isArray(modes)) {
+      return modesToFlags(modes)
+    } else {
+      return modes
     }
   }
 

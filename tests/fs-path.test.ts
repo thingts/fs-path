@@ -581,6 +581,50 @@ describe('FsPath', () => {
       })
     })
     
+    describe('access()', () => {
+      let file: FsPath
+
+      beforeEach(async () => {
+        file = await root.join('test.txt').write('hello')
+      })
+
+      it('returns true when the path exists', async () => {
+        expect(await file.access([])).toBe(true)
+        expect(await file.access({})).toBe(true)
+      })
+
+      it('returns false when the path does not exist', async () => {
+        expect(await root.join('missing.txt').access([])).toBe(false)
+      })
+
+      it('checks access from a mode string', async () => {
+        await file.setPermissions({ mode: 0o400 })
+
+        expect(await file.access('read')).toBe(true)
+        expect(await file.access('execute')).toBe(false)
+      })
+
+      it('checks access from a mode array', async () => {
+        await file.setPermissions({ mode: 0o600 })
+
+        expect(await file.access(['read', 'write'])).toBe(true)
+        expect(await file.access(['read', 'execute'])).toBe(false)
+      })
+
+      it('checks access from permission flags', async () => {
+        await file.setPermissions({ mode: 0o100 })
+
+        expect(await file.access({ execute: true })).toBe(true)
+        expect(await file.access({ read: true })).toBe(false)
+      })
+
+      it('throws the underlying error when throw is true', async () => {
+        const missing = root.join('missing.txt')
+
+        await expect(() => missing.access([], { throw: true })).rejects.toThrow(/ENOENT/)
+      })
+    })
+
     describe('setPermissions', () => {
       let file: FsPath
 
@@ -623,6 +667,18 @@ describe('FsPath', () => {
         await file.setPermissions({ mode: 0o101 }, { operation: 'clear' })
         const stat = await file.stat()
         expect(stat.mode & 0o777).toBe(0o654)
+      })
+
+      it('accepts FsFileMode string and array specs', async () => {
+        await file.setPermissions({
+          user: ['read', 'write'],
+          group: 'read',
+          others: []
+        })
+
+        const stat = await file.stat()
+        expect(stat.mode & 0o777).toBe(0o640)
+
       })
     })
   })
