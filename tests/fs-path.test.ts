@@ -1,6 +1,7 @@
 import child_process from 'node:child_process'
 import { Filename, RelativePath, FsPath } from '$src'
 import { beforeEach, describe, it, expect } from 'vitest'
+import { symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 
 describe('FsPath', () => {
@@ -176,6 +177,20 @@ describe('FsPath', () => {
       expect(await subdir.exists()).toBe(true)
       expect(await subdir.isDirectory()).toBe(true)
       expect(await subdir.isFile()).toBe(false)
+    })
+
+    describe('realPath()', () => {
+      it('resolves symbolic links', async () => {
+        const target = await root.join('target.txt').write('hello')
+        const link = root.join('link.txt')
+
+        await symlink(String(target), String(link))
+
+        const real = await link.realPath()
+
+        expect(real.equals(await target.realPath())).toBe(true)
+        expect(await real.read()).toBe('hello')
+      })
     })
 
     describe('makeDirectory()', () => {

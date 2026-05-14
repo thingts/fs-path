@@ -305,6 +305,20 @@ export class FsPath extends AbsolutePath {
   }
 
   /**
+   * Resolves this path to its canonical filesystem path.
+   *
+   * This resolves symbolic links and returns the absolute canonical path
+   * reported by the filesystem.
+   *
+   * The path must exist; otherwise the underlying filesystem error is thrown.
+   *
+   * @returns A Promise resolving to a new {@link FsPath}.
+   */
+  async realPath(): Promise<FsPath> {
+    return new FsPath(await fs.realpath(this.path_))
+  }
+
+  /**
    * Checks the accessibility of the path with the specified mode(s).
    *
    * Note that a successful access check does not guarantee that a
