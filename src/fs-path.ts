@@ -50,9 +50,9 @@ export type FsPermissionSpec = {
 } | {
   /** Permissions for user */
   user?:   FsFileModeSpec
-  /** Permissions for user */
+  /** Permissions for group */
   group?:  FsFileModeSpec
-  /** Permissions for user */
+  /** Permissions for others */
   others?: FsFileModeSpec
 } | {
   /** Permissions for all (user, group and others) */
@@ -70,12 +70,6 @@ export interface FsReadDirectoryOptions extends FsPathFilterOptions {
    */
   allowMissing?: boolean
 }
-
-/**
- * @deprecated Use FsReadDirectoryOptions instead.
- * @hidden
- */
-export type FsReaddirOptions = FsReadDirectoryOptions 
 
 /**
  * Represents an absolute filesystem path (i.e. a path starting at the root with
@@ -169,14 +163,6 @@ export class FsPath extends AbsolutePath {
   }
 
   /**
-   * Creates a new temporary directory under the system temporary directory.
-   *
-   * The directory is marked as {@link disposable}.
-   *
-   * @see {@link disposable | `disposable()`}
-   */
-
-  /**
    * Creates a new temporary directory
    *
    * By default, the directory is created under the system temporary
@@ -218,7 +204,7 @@ export class FsPath extends AbsolutePath {
    * @see {@link disposable | `disposable()`}
    */
   static async makeTempDirectory(opts?: {
-    parent?: string | FsPath | AbsolutePath
+    parent?: AbsolutePath
     prefix?: string
     makeParents?: boolean
   }): Promise<FsPath> {
@@ -408,20 +394,56 @@ export class FsPath extends AbsolutePath {
   }
 
   /**
-   * Create a directory at this path.
+   * Create a directory at this path
+   *
+   * By default, if the directory already exists, this succeeds as a no-op
+   * (that is, the operation is idempotent).
+   *
    * @param opts.makeParents - If true, create parent directories as needed.
+   * @param opts.throwIfExists - If true, throw an error if the final directory already exists. (Default: false)
    *
    * @example
    * ```ts
    * const p = new FsPath('/path/to/dir')
-   * await p.makeDirectory({ makeParents: true }) // Creates the directory and any needed parent directories
+   * await p.makeDirectory({ makeParents: true }) // Ensures the directory and any needed parent directories exist
+   * await p.makeDirectory({ throwIfExists: true }) // Throws if the directory already exists
    * ```
    *
    * @returns A Promise resolving to this instance, for chaining.
    */
-  async makeDirectory(opts?: { makeParents?: boolean }): Promise<this> {
-    const { makeParents = false } = opts ?? {}
-    await fs.mkdir(this.path_, { recursive: makeParents })
+  async makeDirectory(opts?: {
+    makeParents?: boolean
+    throwIfExists?: boolean
+  }): Promise<this> {
+    const { makeParents = false, throwIfExists = false } = opts ?? {}
+
+    // Strict mode: fail immediately if the path already exists.
+    if (throwIfExists && await this.exists()) {
+      throw Self.#pathExistsError(this.path_)
+    }
+
+    try {
+      await fs.mkdir(this.path_, { recursive: makeParents })
+    } catch (err) {
+      // Any non-EEXIST error should propagate.
+      if (!Self.#errnoExceptionCode(err, 'EEXIST')) {
+        throw err
+      }
+
+      // In strict mode, EEXIST is always an error.
+      if (throwIfExists) {
+        throw err
+      }
+
+      // If something exists here but it is not a directory,
+      // creation did not succeed.
+      if (!(await this.isDirectory())) {
+        throw err
+      }
+
+      // Existing directory is acceptable in default mode.
+    }
+
     return this
   }
 
@@ -436,7 +458,7 @@ export class FsPath extends AbsolutePath {
    * const content = await p.read()
    * ```
    */
-  async read(opts?: { encoding: BufferEncoding }): Promise<string> {
+  async read(opts?: { encoding?: BufferEncoding }): Promise<string> {
     const { encoding = 'utf8' } = opts ?? {}
     return await fs.readFile(this.path_, { encoding })
   }
@@ -544,6 +566,7 @@ export class FsPath extends AbsolutePath {
    * @param to - The target path to move to.
    * @param opts.intoDir - If true, treat `to` as a directory and move the file into it. (Default: false)
    * @param opts.makeParents - If true, create parent directories of the target path as needed. (Default: false)
+   * @param opts.overwrite - If false, do not overwrite an existing file; instead throw an error if the final destination path already exists. (Default: true)
    *
    * @example
    * ```ts
@@ -558,10 +581,13 @@ export class FsPath extends AbsolutePath {
    *
    * @returns A Promise resolving to a new {@link FsPath} for the final path (either `to` or `to.join(this.filename)` based on `opts.intoDir`)
    */
-  async moveTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean }): Promise<FsPath> {
-    const { intoDir = false, makeParents = false } = opts ?? {}
+  async moveTo(to: AbsolutePath, opts?: { intoDir?: boolean, makeParents?: boolean, overwrite?: boolean }): Promise<FsPath> {
+    const { intoDir = false, makeParents = false, overwrite = true } = opts ?? {}
     const target = new FsPath(to)
     const destination = intoDir ? target.join(this.filename) : target
+    if (!overwrite && await destination.exists()) {
+      throw Self.#pathExistsError(destination.path_)
+    }
     await destination.#makeParents(makeParents)
     await fs.rename(this.path_, destination.path_)
     return destination
@@ -619,9 +645,9 @@ export class FsPath extends AbsolutePath {
   ): Promise<FsPath> {
     const {
       intoDir = false,
-        makeParents = false,
-        recursive = false,
-        overwrite = true
+      makeParents = false,
+      recursive = false,
+      overwrite = true
     } = opts ?? {}
 
     const target      = new FsPath(to)
@@ -670,12 +696,6 @@ export class FsPath extends AbsolutePath {
       throw err
     }
   }
-
-  /**
-   * @deprecated Use readDirectory instead.
-   * @hidden
-   */
-  get readdir(): (opts?: FsReadDirectoryOptions) => Promise<FsPath[]> { return this.readDirectory.bind(this) } // alias
 
   /**
    * Finds files and directories matching a glob pattern within this directory.
@@ -856,6 +876,11 @@ export class FsPath extends AbsolutePath {
   // --- Error helpers ---
   //
 
+  static #pathExistsError(path: string): Error & { code: string } {
+    const code = 'EEXIST'
+    return Object.assign(new Error(`Path already exists (${code}): ${path}`), { code })
+  }
+
   static #errnoExceptionCode(err: unknown, code: string): boolean {
     return err instanceof Error && 'code' in err && err.code == code
   }
@@ -944,7 +969,7 @@ export class FsPath extends AbsolutePath {
   #registerDisposable(): void {
     Self.#initOnExitHandler()
     Self.#disposableRefs.add(new WeakRef(this))
-    Self.#finalizationRegistry.register(this, this.toString())
+    Self.#finalizationRegistry.register(this, this.toString(), this)
   }
 
   #unregisterDisposable(): void {

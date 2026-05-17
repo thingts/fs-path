@@ -36,6 +36,10 @@ Under the hood, this package uses:
 * [`node:fs/promises`](https://nodejs.org/api/fs/promises.html) for async filesystem operations
 * [`tinyglobby`](https://www.npmjs.com/package/tinyglobby) for globbing
 
+## Documentation
+
+* See API reference at [https://thingts.github.io/fs-path/](https://thingts.github.io/fs-path/).
+* See [CHANGELOG.md](./CHANGELOG.md) for release history and breaking changes.
 
 ## Overview
 

@@ -1,0 +1,20 @@
+## 2.0.0
+
+### Breaking changes
+
+- `FsPath.makeDirectory()` is now idempotent by default.
+  - Previously, calling `makeDirectory()` on an existing directory threw `EEXIST`.
+  - It now succeeds as a no-op when the directory already exists.
+  - To preserve the previous strict behavior, use:
+    `makeDirectory({ throwIfExists: true })`
+
+- The `parent` option of `FsPath.makeTempDirectory()` now requires an `AbsolutePath`.
+  - Previously, it accepted arbitrary strings, which were resolved against the current working directory.
+  - To preserve the previous behavior, use:
+    `makeTempDirectory({ parent: new FsPath('parentString') })`
+
+### New features
+
+- Added `throwIfExists` option to `FsPath.makeDirectory()` to control behavior when the directory already exists.
+- Added `overwrite` option to `FsPath.moveTo()` (default `true`).
+  - Setting it to `false` causes the method to throw if the destination already exists.

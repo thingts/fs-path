@@ -194,14 +194,19 @@ describe('FsPath', () => {
     })
 
     describe('makeDirectory()', () => {
-      it ('throws if trying to create an existing directory', async () => {
+      it ('doesn\'t throw if trying to create an existing directory', async () => {
         const subdir = await root.join('sub').makeDirectory()
-        await expect(subdir.makeDirectory()).rejects.toThrow(/EEXIST/)
+        await expect(subdir.makeDirectory()).resolves.toBe(subdir)
       })
 
-      it ('doesn\'t throw if trying to create an existing directory with makeParents: true', async () => {
+      it ('throws if trying to create an existing directory with throwIfExists: true', async () => {
         const subdir = await root.join('sub').makeDirectory()
-        await expect(subdir.makeDirectory({ makeParents: true})).resolves.toBeDefined()
+        await expect(() => subdir.makeDirectory({ throwIfExists: true })).rejects.toThrow(/EEXIST/)
+      })
+
+      it ('throws if trying to create an existing directory with makeParents: true and throwIfExists: true', async () => {
+        const subdir = await root.join('sub').makeDirectory()
+        await expect(() => subdir.makeDirectory({ makeParents: true, throwIfExists: true })).rejects.toThrow(/EEXIST/)
       })
     })
 
@@ -372,6 +377,24 @@ describe('FsPath', () => {
 
         expect(await dest.read()).toBe(content)
         expect(await src.exists()).toBe(false)
+      })
+
+      it('overwrites an existing file by default', async () => {
+        const source = await root.join('source.txt').write('new')
+        const target = await root.join('target.txt').write('old')
+
+        await source.moveTo(target)
+        expect(await target.read()).toBe('new')
+        expect(await source.exists()).toBe(false)
+      })
+
+      it('throws instead of overwriting when overwrite: false', async () => {
+        const source = await root.join('source.txt').write('new')
+        const target = await root.join('target.txt').write('old')
+
+        await expect(() => source.moveTo(target, { overwrite: false })).rejects.toThrow()
+        expect(await target.read()).toBe('old')
+        expect(await source.read()).toBe('new')
       })
     })
 
