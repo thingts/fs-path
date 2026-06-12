@@ -80,8 +80,7 @@ npm install @thingts/fs-path
 
 ## Usage examples
 
-This is a quick overview of some common operations. For complete docs, see the [API Reference](https://thingts.github.io/fs-path).
-
+This is a quick overview of the available operations. It does not all all possible options; For complete docs see the [API Reference](https://thingts.github.io/fs-path).
 
 ```typescript
 import { FsPath } from '@thingts/fs-path'
@@ -101,24 +100,30 @@ b.equals(FsPath.cwd().join('relative/to/cwd.txt')) // → true
 
 ```typescript
 const a = new FsPath('/bar/file.txt')
+a.toString()              // → '/bar/file.txt'
 a.filename                // → Filename('file.txt')
 a.filename.toString()     // → 'file.txt'
 a.stem                    // → 'file'
 a.extension               // → '.txt'
 a.parent                  // → FsPath('/bar')
+a.segments                // → ['bar', 'file.txt']
 const b = a.replaceStem('report')         // → FsPath('/bar/report.txt')
 const c = b.replaceExtension('.md')       // → FsPath('/bar/report.md')
 const d = c.replaceParent('/other')       // → FsPath('/other/report.md')
-const e = d.transformFilename(f => String(f).toUpperCase()) // → FsPath('/other/REPORT.MD')
+const e = d.replaceFilename('REPORT.MD')  // → FsPath('/other/REPORT.MD')
+const f = d.transformFilename(f => String(f).toUpperCase()) // → FsPath('/other/REPORT.MD')
 ```
 
 #### Navigation
 
 ```typescript
 const base = new FsPath('/projects/demo')
-base.join('src/index.ts')               // → FsPath('/projects/demo/src/index.ts')
-base.descendsFrom('/projects')          // → true
-base.parent.equals('/projects')         // → true
+base.join('src/index.ts')              // → FsPath('/projects/demo/src/index.ts')
+base.join('/src/index.ts')             // → FsPath('/projects/demo/src/index.ts')
+base.resolve('src/index.ts')           // → FsPath('/projects/demo/src/index.ts')
+base.resolve('/src/index.ts')          // → FsPath('/src/index.ts')
+base.descendsFrom('/projects')         // → true
+base.parent.equals('/projects')        // → true
 const rel = base.join('src/main.ts').relativeTo(base) // → RelativePath('src/main.ts')
 ```
 
@@ -131,7 +136,10 @@ const file = dir.join('logs/app.log')
 // --- Writing and reading ---
 await file.write('start\n', { makeParents: true })
 await file.write('listening\n', { append: true })
-await file.read()       // → 'start\nlistening\n'
+await file.read()                  // → 'start\nlistening\n'
+await file.readBytes({ size: 16 }) // → Buffer containing first 16 bytes
+await file.readStream()            // → Readable stream of file contents
+
 
 // --- File info ---
 await file.exists()       // → true
@@ -141,17 +149,24 @@ await file.parent.isDirectory() // → true
 await file.access('read')             // → true
 await file.access(['read', 'write'])  // → true
 await file.stat()         // → fs.Stats object
+await file.realPath()     // → FsPath of the real path (resolving symlinks)
 
 // --- Directory operations...
 await dir.join('sub').makeDirectory()
 const files = await dir.readDirectory()    // → [FsPath, ...]
 const txts  = await dir.glob('**/*.log')   // glob within a directory  → [FsPath, ...]
 
-// --- Copying files and directories ---
-await file.copyTo('/projects/backup/app.log', { makeParents: true }) // copy file
-await file.copyTo('/projects/backup', { intoDir: true })             // copy into a directory
-await dir.copyTo('/projects/backup/demo', { recursive: true })       // copy a directory recursively
-await file.copyTo('/projects/backup/app.log', { overwrite: false })  // throws if destination exists
+// --- File and directory manipulation ---
+await file.copyTo('/projects/backup/app.log', { makeParents: true })  // copy file
+await file.copyTo('/projects/backup', { intoDir: true })              // copy into a directory
+await dir.copyTo('/projects/backup/demo', { recursive: true })        // copy a directory recursively
+await file.copyTo('/projects/backup/app.log', { overwrite: false })   // throws if destination exists
+await file.moveTo('/projects/backup/app.log', { overwrite: true })    // move (rename) file, overwriting if exists
+await file.moveTo('/projects/backup', { intoDir: true })              // move into a directory
+await file.remove()                                                   // remove file
+await file.setPermissions({ mode: 0o600 })                            // set file permissions mode
+await file.setPermissions({ user: ['read', 'write'] })                // set permissions symbolically
+await file.touch()                                                    // update file timestamps or create if not exists
 ```
 
 #### Temporary (a.k.a. disposable) files and directories
