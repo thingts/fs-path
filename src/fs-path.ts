@@ -518,6 +518,37 @@ export class FsPath extends AbsolutePath {
     }
     return this
   }
+
+  /**
+   * Reads a range of bytes from the file.
+   *
+   * This method is useful for inspecting file headers, magic bytes, or other
+   * binary metadata without reading the entire file into memory.
+   *
+   * If the requested range extends beyond the end of the file, the returned
+   * buffer will contain only the bytes that were successfully read.
+   *
+   * @param opts.offset Byte offset at which to begin reading. Defaults to `0`.
+   * @param opts.size Maximum number of bytes to read.
+   */
+  async readBytes(opts: {
+    offset?: number
+    size: number
+  }): Promise<Buffer> {
+    const { size, offset = 0 } = opts
+    const handle = await fs.open(this.path_, 'r')
+
+    try {
+      const { bytesRead, buffer } = await handle.read({
+        buffer: Buffer.allocUnsafe(size),
+        position: offset,
+      })
+
+      return buffer.subarray(0, bytesRead)
+    } finally {
+      await handle.close()
+    }
+  }
   
   /**
    * Creates a readable stream for the file.

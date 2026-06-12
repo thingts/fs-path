@@ -309,6 +309,31 @@ describe('FsPath', () => {
       })
     })
 
+    describe('readBytes()', () => {
+      it('reads a portion of a file', async () => {
+        const file = root.join('file.txt')
+        await file.write('abcdef')
+
+        const bytes = await file.readBytes({
+          offset: 2,
+          size: 3,
+        })
+
+        expect(bytes.toString()).toBe('cde')
+      })
+
+      it('truncates reads at end of file', async () => {
+        const file = root.join('file.txt')
+        await file.write('abc')
+        const bytes = await file.readBytes({
+          offset: 1,
+          size: 10,
+        })
+
+        expect(bytes.toString()).toBe('bc')
+      })
+    })
+
     describe('readStream()', () => {
       it('returns a readable stream for the file', async () => {
         const content = 'Hello, stream!'

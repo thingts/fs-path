@@ -1,3 +1,10 @@
+## 2.1.0
+
+### New features
+
+- Added `.readBytes({ offset, size })` method to `FsPath` for reading partial file contents as a `Buffer`.
+
+
 ## 2.0.0
 
 ### Breaking changes
