@@ -118,12 +118,12 @@ const f = d.transformFilename(f => String(f).toUpperCase()) // → FsPath('/othe
 
 ```typescript
 const base = new FsPath('/projects/demo')
-base.join('src/index.ts')              // → FsPath('/projects/demo/src/index.ts')
-base.join('/src/index.ts')             // → FsPath('/projects/demo/src/index.ts')
-base.resolve('src/index.ts')           // → FsPath('/projects/demo/src/index.ts')
-base.resolve('/src/index.ts')          // → FsPath('/src/index.ts')
-base.descendsFrom('/projects')         // → true
-base.parent.equals('/projects')        // → true
+base.join('src/index.ts')                  // → FsPath('/projects/demo/src/index.ts')
+base.join('/src/index.ts')                 // → FsPath('/projects/demo/src/index.ts')
+base.resolve('src/index.ts')               // → FsPath('/projects/demo/src/index.ts')
+base.resolve('/src/index.ts')              // → FsPath('/src/index.ts')
+base.descendsFrom(new FsPath('/projects')) // → true
+base.parent.equals('/projects')            // → true
 const rel = base.join('src/main.ts').relativeTo(base) // → RelativePath('src/main.ts')
 ```
 
@@ -157,16 +157,18 @@ const files = await dir.readDirectory()    // → [FsPath, ...]
 const txts  = await dir.glob('**/*.log')   // glob within a directory  → [FsPath, ...]
 
 // --- File and directory manipulation ---
-await file.copyTo('/projects/backup/app.log', { makeParents: true })  // copy file
-await file.copyTo('/projects/backup', { intoDir: true })              // copy into a directory
-await dir.copyTo('/projects/backup/demo', { recursive: true })        // copy a directory recursively
-await file.copyTo('/projects/backup/app.log', { overwrite: false })   // throws if destination exists
-await file.moveTo('/projects/backup/app.log', { overwrite: true })    // move (rename) file, overwriting if exists
-await file.moveTo('/projects/backup', { intoDir: true })              // move into a directory
-await file.remove()                                                   // remove file
-await file.setPermissions({ mode: 0o600 })                            // set file permissions mode
-await file.setPermissions({ user: ['read', 'write'] })                // set permissions symbolically
-await file.touch()                                                    // update file timestamps or create if not exists
+const backupDir = new FsPath('/projects/backup')
+const backupFile = backupDir.join('app.log')
+await file.copyTo(backupFile, { makeParents: true })   // copy file
+await file.copyTo(backupDir, { intoDir: true })        // copy into a directory
+await dir.copyTo(backupDir, { recursive: true })       // copy a directory recursively
+await file.copyTo(backupFile, { overwrite: false })    // throws if destination exists
+await file.moveTo(backupFile, { overwrite: true })     // move file, overwriting if exists
+await file.moveTo(backupDir, { intoDir: true })        // move into a directory
+await file.remove()                                    // remove file
+await file.setPermissions({ mode: 0o600 })             // set file permissions mode
+await file.setPermissions({ user: ['read', 'write'] }) // set permissions symbolically
+await file.touch()                                     // update file timestamps or create if not exists
 ```
 
 #### Temporary (a.k.a. disposable) files and directories

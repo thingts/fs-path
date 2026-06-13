@@ -72,7 +72,7 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "@thingts/path": "^2.0.4",
+    "@thingts/path": "^3.0.0",
     "tinyglobby": "^0.2.15"
   }
 }

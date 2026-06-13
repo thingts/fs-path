@@ -858,7 +858,7 @@ describe('FsPath', () => {
       it('creates a scratch directory under system tmpdir', async () => {
         const dir = await FsPath.makeTempDirectory()
         expect(dir).toBeInstanceOf(FsPath)
-        expect(dir.descendsFrom(tmpdir())).toBe(true)
+        expect(dir.descendsFrom(new FsPath(tmpdir()))).toBe(true)
         expect(await dir.exists()).toBe(true)
       })
 

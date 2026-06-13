@@ -1,3 +1,15 @@
+# Change Log
+
+## 3.0.0
+
+### Breaking changes
+
+- Type safety: `.descendsFrom()` no longer accepts strings, only `FsPath` instances.
+
+### Dependency updates
+
+- Updated `@thingts/path` to `^3.0.0`.
+
 ## 2.1.0
 
 ### New features
