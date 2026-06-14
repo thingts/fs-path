@@ -80,7 +80,7 @@ npm install @thingts/fs-path
 
 ## Usage examples
 
-This is a quick overview of the available operations. It does not all all possible options; For complete docs see the [API Reference](https://thingts.github.io/fs-path).
+This is a quick overview of the available operations. It does not show all possible options; for complete docs see the [API Reference](https://thingts.github.io/fs-path).
 
 <!-- %%embed%% examples/overview.ts -->
 ```typescript
@@ -179,6 +179,7 @@ await file.touch()                                      // update file timestamp
 const gcDir  = await FsPath.makeTempDirectory()
 const gcFile = new FsPath('/projects/tempfile.txt').disposable()
 ```
+
 
 
 
