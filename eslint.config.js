@@ -67,4 +67,13 @@ export default defineConfig(
       ],
     }
   },
+  {
+    files: ['examples/**/*.ts', 'examples/**/*.js'],
+    rules: {
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+    }
+  }
+
 )

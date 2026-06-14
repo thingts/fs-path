@@ -1,4 +1,4 @@
 {
-  "ignore": ["typedoc.json"],
-  "ignoreDependencies": ["tsx", "@types/picomatch"]
+  "ignore": ["typedoc.json", "examples/overview.ts"],
+  "ignoreDependencies": ["@types/picomatch"]
 }

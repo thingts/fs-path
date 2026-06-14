@@ -1,0 +1,2 @@
+npm run build:readme
+git add README.md

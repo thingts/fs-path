@@ -53,15 +53,18 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup src/index.ts --dts --format esm,cjs",
+    "build:readme": "tsx scripts/embed-examples.ts",
     "docs": "typedoc",
     "lint": "tsc --build --noEmit ; eslint ; knip",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@types/node": "^25.0.3",
     "@types/picomatch": "^4.0.2",
     "eslint": "^9.39.2",
+    "husky": "^9.1.7",
     "knip": "^5.80.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
