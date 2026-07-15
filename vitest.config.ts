@@ -6,6 +6,5 @@ export default defineConfig({
     alias: {
       '$src': '/src/index.ts',
     },
-    execArgv: ['--expose-gc'],
   },
 })

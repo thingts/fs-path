@@ -1,5 +1,10 @@
 # Change Log
 
+## 3.0.1
+
+- *Fixed:* disposable paths are no longer deleted when an `FsPath` instance is garbage-collected. Cleanup now occurs only through `Symbol.dispose` (`using`) or at process exit. This prevents temporary directories from disappearing while derived paths are still in use, and is generally more predictable and safer.
+
+
 ## 3.0.0
 
 ### Breaking changes

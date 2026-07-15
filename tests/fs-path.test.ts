@@ -781,21 +781,24 @@ describe('FsPath', () => {
       expect(await dir.exists()).toBe(false) // dir was not retained
     })
 
-    it('disposes on gc', async () => {
-      if (!global.gc) {
-        expect('gc() is not available. set config execArgv === ["--expose-gc"]').toBe(false)
-      }
-
+    it('lets an equivalent instance retain a path from disposal', async () => {
       const file = await root.join('file.txt').touch()
-      expect(await file.exists()).toBe(true)
+      const original = new FsPath(file).disposable()
+      const equivalent = new FsPath(file)
+      equivalent.retain()
 
-      let disposable: FsPath | null = new FsPath(file).disposable()
-      expect(await disposable.exists()).toBe(true)
-      disposable = null
-      for (let i = 0; i < 10; i++) {
-        global.gc!()                            // eslint-disable-line @typescript-eslint/no-non-null-assertion
-        await new Promise(r => setTimeout(r, 100))
-        if (!await file.exists()) { break }
+      original[Symbol.dispose]()
+      expect(await file.exists()).toBe(true)
+    })
+
+    it('is harmless to call disposable() or retain() repeatedly', async () => {
+      const file = await root.join('file.txt').touch()
+      {
+        using p = new FsPath(file).disposable().disposable()
+        p.retain()
+        p.retain()
+        p.disposable()
+        expect(await p.exists()).toBe(true)
       }
       expect(await file.exists()).toBe(false)
     })
@@ -818,6 +821,27 @@ describe('FsPath', () => {
         })
       })
       expect(await file.exists()).toBe(false)
+    })
+
+    it('lets an equivalent instance retain a path from process-exit disposal', async () => {
+      const program = await root.join('program.ts').write(`
+        import { FsPath } from '${__dirname}/../src'
+        const path = new FsPath(process.argv[2])
+        if (path.stem == 'dispose-of-me') { // ensure disposing the right thing!
+          path.disposable()
+          new FsPath(path).retain() // retain via an equivalent, but distinct, instance
+        }
+      `)
+      const file = await root.join('dispose-of-me.txt').touch()
+      expect(await file.exists()).toBe(true)
+      await new Promise<void>((resolve, reject) => {
+        child_process.exec(`npx --quiet tsx ${String(program)} ${String(file)}`, (error, _stdout, stderr) => {
+          if (error) { reject(error) }
+          else if (stderr) { reject(new Error(stderr)) }
+          else { resolve() }
+        })
+      })
+      expect(await file.exists()).toBe(true)
     })
 
     it('throws an error for using declaration without disposable()', async () => {
