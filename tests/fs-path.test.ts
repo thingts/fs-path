@@ -815,7 +815,7 @@ describe('FsPath', () => {
       expect(await file.exists()).toBe(true)
       await new Promise<void>((resolve, reject) => {
         child_process.exec(`npx --quiet tsx ${String(program)} ${String(file)}`, (error, _stdout, stderr) => {
-          if (error) { reject(error) }
+          if (error) { reject(error) } // eslint-disable-line @typescript-eslint/prefer-promise-reject-errors
           else if (stderr) { reject(new Error(stderr)) }
           else { resolve() }
         })
@@ -836,7 +836,7 @@ describe('FsPath', () => {
       expect(await file.exists()).toBe(true)
       await new Promise<void>((resolve, reject) => {
         child_process.exec(`npx --quiet tsx ${String(program)} ${String(file)}`, (error, _stdout, stderr) => {
-          if (error) { reject(error) }
+          if (error) { reject(error) } // eslint-disable-line @typescript-eslint/prefer-promise-reject-errors
           else if (stderr) { reject(new Error(stderr)) }
           else { resolve() }
         })
