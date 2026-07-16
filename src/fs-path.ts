@@ -784,10 +784,10 @@ export class FsPath extends AbsolutePath {
    *
    * A disposable path is deleted either:
    *
-   * * when leaveing the scope of a [`using`
+   * * when leaving the scope of a [`using`
    *   declaration](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/using) (via [`Symbol.dispose`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/dispose))
    *
-   * * On normal process exit.
+   * * on normal process exit.
    *
    * Disposability is associated with the normalized path string, not
    * with this particular {@link FsPath} instance. Any other {@link FsPath}
