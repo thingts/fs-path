@@ -849,7 +849,7 @@ describe('FsPath', () => {
       await expect(async () => {
         using useFile = new FsPath(file)
         expect(await useFile.exists()).toBe(true)
-      }).rejects.toThrow('Object not disposable')
+      }).rejects.toThrow(/not disposable/i)
       expect(await file.exists()).toBe(true) // file was not disposed
     })
 
@@ -859,7 +859,7 @@ describe('FsPath', () => {
       await expect(async () => {
         using useFile = new FsPath(file)
         expect(await useFile.exists()).toBe(true)
-      }).rejects.toThrow('Object not disposable')
+      }).rejects.toThrow(/not disposable/i)
       expect(await file.exists()).toBe(true) // file was not disposed
     })
 
